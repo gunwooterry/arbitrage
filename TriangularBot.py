@@ -8,12 +8,12 @@ from threading import Thread
 import time
 
 from Bot import Bot
-from TriangleProfitCalculator import TriangleProfitCalculator
+from TriangularCalculator import TriangularCalculator
 
 
-class TriangularArbitrageBot(Bot):
+class TriangularBot(Bot):
     def __init__(self, config, brokers, targets):
-        super(TriangularArbitrageBot, self).__init__(config, brokers)
+        super(TriangularBot, self).__init__(config, brokers)
         # this bot only trades on ONE broker!!!
         # the reason I am doing this is to make the initial prototype system more robust to failure
         # i.e. others keep trading even if one exchange fails.
@@ -94,7 +94,7 @@ class TriangularArbitrageBot(Bot):
         unlike the cross-exchange arbitrage bot, this one only trades
         one exchange at a time!
         """
-        pc = TriangleProfitCalculator(broker, target, self.cross_market_pairs[target])
+        pc = TriangularCalculator(broker, target, self.cross_market_pairs[target])
         # type1 and type2 roundtrips are in fact completely mutually exclusive!
         # that means that if we detect both type1 and type2 roundtrips, we can simultaneously
         # execute both without worrying about moving the market.

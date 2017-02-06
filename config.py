@@ -32,7 +32,7 @@ PAPER_BALANCE = {k: 20 / v for k, v in VALUE_REF.items()}  # for 7 exchanges, ha
 # as you grow more confident in the stability of the trading bot, you can increase riskiness by decreasing this number.
 BTC_RISK = 0.001
 
-keys_dir = "exchanges/keys"
+keys_dir = "exchanges/keys/"
 # BTER API
 BTER_KEYFILE = keys_dir + "bter_key.txt"
 # POLONIEX API

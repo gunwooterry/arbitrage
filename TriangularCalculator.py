@@ -5,7 +5,7 @@ from Order import Order
 import utils
 
 
-class TriangleProfitCalculator(object):
+class TriangularCalculator(object):
     """
     Profit calculator for single-exchange triangular arbitrage, trading
     minimum arbitrage volumes.

@@ -1,11 +1,11 @@
-from TriangularArbitrageBot import TriangularArbitrageBot
+from TriangularBot import TriangularBot
 from utils_broker import create_broker
 import config_tri as config
 from threading import Thread
 
 
 def thread_bot(conf, brks, pairs):
-    bot = TriangularArbitrageBot(conf, [brks], pairs)
+    bot = TriangularBot(conf, [brks], pairs)
     bot.start(5)
 
 for xchg in config.EXCHANGES:
