@@ -216,5 +216,5 @@ local.properties
 .recommenders/
 
 # Custom
-exchanges/keys
-log/
+exchanges/keys/*
+log/*
