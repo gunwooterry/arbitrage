@@ -4,7 +4,6 @@
 
 import logging
 import logging.handlers
-from threading import Thread
 import time
 
 from Bot import Bot
@@ -22,25 +21,28 @@ class TriangularBot(Bot):
         self.broker = self.brokers[0]
         self.log = logging.getLogger(self.broker.xchg.name)
         self.targets = targets
+        self.cross_market_pairs = {}    # c_m_p[A] is a list of all possible (B, C)
+        self.update_pairs = {}          # u_p[A] is a list of pairs to update
+
         file_handler = logging.FileHandler('./log/%s.log' % (self.broker.xchg.name,))
-        streamHandler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler()
         self.log.setLevel(logging.INFO)
         self.log.addHandler(file_handler)
-        self.log.addHandler(streamHandler)
+        self.log.addHandler(stream_handler)
         self.init_cross_markets()
 
     # requires HTTP Connection
     def get_roundtrip_pairs(self, target):
         """
-        given currency A, returns an array of all tradeable pairs (B, C) if
-        the exchange supports markets (A_B or B_A) and (B_C or C_B) and (C_A or A_C).
+        given currency A, returns an array of all tradeable pairs (B, C) but not (C, B)
+        if the exchange supports markets (A_B or B_A) and (B_C or C_B) and (C_A or A_C).
         """
         xchg = self.broker.xchg
         pairs = []
-        big_coins = xchg.get_major_currencies()
+        majors = xchg.get_major_currencies()
 
-        for curr1 in big_coins:
-            for curr2 in big_coins:
+        for curr1 in majors:
+            for curr2 in majors:
                 if curr1 >= curr2:
                     continue
                 if xchg.get_validated_pair((target, curr1)) is not None \
@@ -63,8 +65,6 @@ class TriangularBot(Bot):
         etc.
         }
         """
-        self.cross_market_pairs = {}
-        self.update_pairs = {}
         for target in self.targets:
             self.cross_market_pairs[target] = self.get_roundtrip_pairs(target)
             self.update_pairs[target] = []
