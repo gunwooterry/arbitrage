@@ -1,8 +1,7 @@
+import config
 from Broker import Broker
 from exchanges.BTER import BTER
 from exchanges.Poloniex import Poloniex
-
-import config
 
 
 # Broker utils

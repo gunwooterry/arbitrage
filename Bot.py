@@ -3,13 +3,14 @@
 # here is where the pair arbitrage strategy is implemented
 # along with the application loop for watching exchanges
 
-import threading
-import time
+import _pickle as pickle
 import logging
 import logging.handlers
-import _pickle as pickle
+import threading
+import time
 from os.path import abspath
-from utils_broker import get_assets, print_assets
+
+from utils_broker import get_assets
 
 
 class Bot(object):

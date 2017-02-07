@@ -1,7 +1,8 @@
+from threading import Thread
+
+import config_tri as config
 from TriangularBot import TriangularBot
 from utils_broker import create_broker
-import config_tri as config
-from threading import Thread
 
 
 def thread_bot(conf, brks, pairs):

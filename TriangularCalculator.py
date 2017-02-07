@@ -1,7 +1,5 @@
 import logging
 
-import config
-from Order import Order
 import utils
 
 
