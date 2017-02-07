@@ -15,7 +15,7 @@ def thread_get_depth(pair, xchg, depth):
     try:
         depth[base + '_' + alt] = xchg.get_depth(base, alt)
     except:
-        print('problemo!!')
+        print("Problem in {}".format(xchg.name))
         depth[base + '_' + alt] = {'bids': [], 'asks': []}
 
 

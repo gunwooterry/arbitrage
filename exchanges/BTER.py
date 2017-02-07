@@ -24,7 +24,7 @@ class BTER(Exchange):
             true_pair, swapped = test
             base, alt = true_pair
             slug = base.lower() + '_' + alt.lower()
-            alt_vol = self.min_volumes[slug]
+            alt_vol = float(self.min_volumes[slug])
             if swapped:
                 return alt_vol
             else:
