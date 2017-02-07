@@ -77,7 +77,23 @@ class BTER(Exchange):
         return {k: float(v) for k, v in funds}
 
     def submit_order(self, order_type, pair, price, volume):
-        return NotImplemented
+        true_pair, swapped = self.get_validated_pair(pair)
+        if true_pair is not None:
+            base, alt = true_pair
+            slug = base.lower() + '_' + alt.lower()
+            if not swapped:
+                if order_type == 'buy':
+                    self.api.placeOrder(slug, 'buy', price, volume)
+                elif order_type == 'sell':
+                    self.api.placeOrder(slug, 'sell', price, volume)
+            else:
+                order = get_swapped_order(Order(price, volume))
+                if order_type == 'buy':
+                    self.api.placeOrder(slug, 'sell', order.p, order.v)
+                elif order_type == 'sell':
+                    self.api.placeOrder(slug, 'buy', order.p, order.v)
+        else:
+            print("Invalid order: {}, {}".format(pair[0], pair[1]))
 
     #         pair, swapped = self.get_validated_pair((rc, gc))
     #         print swapped

@@ -57,8 +57,8 @@ class Poloniex(Exchange):
 
         if pair is None:
             return
-        pairstr = pair[1].upper() + '_' + pair[0].upper()
-        depth = self.api.returnOrderBook(pairstr)
+        slug = pair[1].upper() + '_' + pair[0].upper()
+        depth = self.api.returnOrderBook(slug)
 
         asks, bids = depth['asks'], depth['bids']
         if not swapped:
@@ -79,7 +79,23 @@ class Poloniex(Exchange):
         return balances
 
     def submit_order(self, order_type, pair, price, volume):
-        pass
+        true_pair, swapped = self.get_validated_pair(pair)
+        if true_pair is not None:
+            base, alt = true_pair
+            slug = alt.upper() + '_' + base.upper()
+            if not swapped:
+                if order_type == 'buy':
+                    self.api.buy(slug, price, volume)
+                elif order_type == 'sell':
+                    self.api.sell(slug, price, volume)
+            else:
+                order = get_swapped_order(Order(price, volume))
+                if order_type == 'buy':
+                    self.api.sell(slug, order.p, order.v)
+                elif order_type == 'sell':
+                    self.api.buy(slug, order.p, order.v)
+        else:
+            print("Invalid order: {}, {}".format(pair[0], pair[1]))
 
     def confirm_order(self, order_id):
         pass

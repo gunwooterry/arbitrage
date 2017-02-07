@@ -1,7 +1,3 @@
-'''
-abstract exchange class
-'''
-
 import abc
 import copy
 import logging
