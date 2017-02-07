@@ -1,8 +1,11 @@
-from .Exchange import Exchange
-from .api import bterapi
+import logging
 import os
+
 from Order import Order
 from utils import get_swapped_order
+
+from .Exchange import Exchange
+from .api import bterapi
 
 
 class BTER(Exchange):
@@ -15,6 +18,7 @@ class BTER(Exchange):
         super(BTER, self).__init__()
         self.name = 'BTER'
         self.trading_fee = 0.002
+        self.log = logging.getLogger(self.name)
 
     def get_major_currencies(self):
         majors = []

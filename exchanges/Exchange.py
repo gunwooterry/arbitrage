@@ -3,9 +3,11 @@ abstract exchange class
 '''
 
 import abc
-import utils
-import threading
+import copy
 import logging
+import threading
+
+import utils
 
 
 def thread_get_depth(pair, xchg, depth):
@@ -30,7 +32,6 @@ class Exchange(object):
         self.set_tradeable_currencies()
         # dictionary of outstanding orders.
         self.outstanding_orders = {}
-        self.log = logging.getLogger(self.name)
 
     @abc.abstractmethod
     def get_major_currencies(self):
@@ -139,7 +140,7 @@ class Exchange(object):
             else:
                 # we need to use the depth information to calculate
                 # how much alt we need to trade to fulfill min base vol
-                return utils.total_base_volume(self.get_clipped_alt_volume(depth, 0.011))
+                return utils.total_base_volume(self.get_clipped_alt_volume(depth, 0.01))
 
     def get_clipped_base_volume(self, orders, desired_base_vol):
         # it is already assumed that the orders are base_alt
@@ -156,8 +157,12 @@ class Exchange(object):
         # cor
         base_remainder = utils.total_base_volume(orders[:i]) - desired_base_vol
         # convert back to units base and subtract from last order
-        orders[i - 1].v -= base_remainder
-        return orders[:i]
+        ret = []
+        for o in orders[:i] :
+            ret.append(copy.copy(o))
+        ret[i-1].v -= base_remainder
+        
+        return ret
 
     def get_clipped_alt_volume(self, orders, desired_alt_volume):
         """
@@ -188,9 +193,12 @@ class Exchange(object):
         # to last otherwise we would have caught it)
         alt_remainder = utils.total_alt_volume(orders[:i]) - desired_alt_volume
         # convert back to units base and subtract from last order
-        orders[i - 1].v -= alt_remainder / orders[i - 1].p
-        # return sum([o.v for o in orders[:i]])
-        return orders[:i]
+        ret = []
+        for o in orders[:i] :
+            ret.append(copy.copy(o))
+        ret[i-1].v -= alt_remainder/ret[i-1].p
+        
+        return ret
 
     def get_validated_pair(self, pair):
         """
