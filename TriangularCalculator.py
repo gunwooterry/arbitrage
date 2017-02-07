@@ -155,8 +155,7 @@ class TriangularCalculator(object):
         max_BA = max_BB / P_AB_Sell / tx
         max_CA = max_CC / P_BC_Sell / P_AB_Sell / tx / tx
         
-        W = min(max_AA, max_BA, max_CA)
-        W *= 0.99
+        W = min(max_AA, max_BA, max_CA) * 0.99
         
         # O_XY_Sell_Clipped : Clipped Order list of X_Y to sell (bids)
         O_AB_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_AB_Sell, V)

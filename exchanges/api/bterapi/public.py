@@ -30,7 +30,7 @@ def get_min_volumes(connection=None, error_handler=None):
 
     for wrapper in market_info:
         for slug, info in wrapper.items():
-            volumes[slug] = info['fee']
+            volumes[slug] = info['min_amount']
 
     return volumes
 
