@@ -199,7 +199,7 @@ class TriangularCalculator(object):
         Takes the form of 3 trades that are computed to fill specific quantities of orders
         in each of 3 different markets in a single exchange.
         """
-        for slug, spread in self.spreads:
+        for slug, spread in self.spreads.items():
             # Risk avoidance threshold 0.1%
             B = slug.split('_')[0]
             C = slug.split('_')[1]

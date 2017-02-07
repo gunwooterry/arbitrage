@@ -28,8 +28,9 @@ def get_min_volumes(connection=None, error_handler=None):
                                           error_handler=error_handler)['pairs']
     volumes = {}
 
-    for slug, info in market_info.items():
-        volumes[slug] = info['fee']
+    for wrapper in market_info:
+        for slug, info in wrapper.items():
+            volumes[slug] = info['fee']
 
     return volumes
 
