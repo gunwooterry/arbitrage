@@ -15,10 +15,8 @@ class BTER(Exchange):
         key = self.keyhandler.getKeys()[0]
         self.conn = bterapi.BTERConnection()
         self.api = bterapi.TradeAPI(key, self.keyhandler)
-        super(BTER, self).__init__()
-        self.name = 'BTER'
-        self.trading_fee = 0.002
-        self.log = logging.getLogger(self.name)
+        Exchange.__init__(self, 'BTER', 0.002)
+        
 
     def get_major_currencies(self):
         majors = []

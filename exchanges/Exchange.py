@@ -23,10 +23,10 @@ class Exchange(object):
     """docstring for Exchange"""
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self):
+    def __init__(self, name, trading_fee):
         super(Exchange, self).__init__()
-        self.name = None
-        self.trading_fee = None
+        self.name = name
+        self.trading_fee = trading_fee
         self.ok = True
         self.tradeable_pairs = self.get_tradeable_pairs()
         self.set_tradeable_currencies()

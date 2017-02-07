@@ -1,11 +1,14 @@
-from .Exchange import Exchange
-from .api.poloniex_api import poloniex
-from Order import Order
-from utils import get_swapped_order
-
 '''
 ALL pairs are written in the order of (BIG coin)_(small coin)
 '''
+
+import logging
+
+from Order import Order
+from utils import get_swapped_order
+
+from .Exchange import Exchange
+from .api.poloniex_api import poloniex
 
 
 class Poloniex(Exchange):
@@ -14,10 +17,7 @@ class Poloniex(Exchange):
         api_key = keyfile.readline()
         secret = keyfile.readline()
         self.api = poloniex(api_key, secret)
-        super(Poloniex, self).__init__()
-        self.name = 'Poloniex'
-        self.trading_fee = 0.0025
-        self.log = logging.getLogger(self.name)
+        Exchange.__init__(self, 'Poloniex', 0.0025)
 
     def get_major_currencies(self):
         majors = []
