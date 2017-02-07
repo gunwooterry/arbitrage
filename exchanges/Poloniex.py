@@ -5,7 +5,7 @@ ALL pairs are written in the order of (BIG coin)_(small coin)
 import logging
 
 from Order import Order
-from utils import get_swapped_order
+from utils import get_swapped_order, total_base_volume
 
 from .Exchange import Exchange
 from .api.poloniex_api import poloniex
@@ -18,6 +18,20 @@ class Poloniex(Exchange):
         secret = keyfile.readline()
         self.api = poloniex(api_key, secret)
         Exchange.__init__(self, 'Poloniex', 0.0025)
+
+    # not all exchanges have the same min volumes!
+    def get_min_vol(self, pair, depth):
+        base, alt = pair
+        slug = base + "_" + alt
+        test = self.get_validated_pair(pair)
+        if test is not None:
+            true_pair, swapped = test
+            if swapped:
+                return 0.0001  # 0.011 reduces likelihood we run into rounding errors. but we miss a lot of opportun
+            else:
+                # we need to use the depth information to calculate
+                # how much alt we need to trade to fulfill min base vol
+                return utils.total_base_volume(self.get_clipped_alt_volume(depth, 0.0001))
 
     def get_major_currencies(self):
         majors = []
