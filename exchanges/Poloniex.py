@@ -17,6 +17,7 @@ class Poloniex(Exchange):
         super(Poloniex, self).__init__()
         self.name = 'Poloniex'
         self.trading_fee = 0.0025
+        self.log = logging.getLogger(self.name)
 
     def get_major_currencies(self):
         majors = []
