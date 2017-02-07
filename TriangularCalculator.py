@@ -109,6 +109,17 @@ class TriangularCalculator(object):
             self.log.info('Empty {}_{} bid orders, skipping...'.format(C, A))
             return False
 
+#         self.log.info('============================')
+#         for o in O_AB_Sell :
+#             self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+#         self.log.info('============================')
+#         for o in O_BC_Sell :
+#             self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+#         self.log.info('============================')
+#         for o in O_CA_Sell :
+#             self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+#         self.log.info('============================')
+
         # min_XY : Minimum volume requirement for X, in the corresponding volume of Y
         min_AA = self.broker.xchg.get_min_vol((A, B), O_AB_Sell)
         min_BB = self.broker.xchg.get_min_vol((B, C), O_BC_Sell)
@@ -199,7 +210,7 @@ class TriangularCalculator(object):
         Takes the form of 3 trades that are computed to fill specific quantities of orders
         in each of 3 different markets in a single exchange.
         """
-        for slug, spread in self.spreads:
+        for slug, spread in self.spreads.items():
             # Risk avoidance threshold 0.1%
             B = slug.split('_')[0]
             C = slug.split('_')[1]
