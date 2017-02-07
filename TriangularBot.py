@@ -27,7 +27,7 @@ class TriangularBot(Bot):
         self.log.setLevel(logging.INFO)
         self.log.addHandler(file_handler)
         self.log.addHandler(stream_handler)
-        self.init_cross_markets()
+        self.update_pairs()
 
     # requires HTTP Connection
     def get_roundtrip_pairs(self, target):
@@ -50,7 +50,7 @@ class TriangularBot(Bot):
                     self.log.info("Selected a pair: ({}, {})".format(b, c))
         return pairs
 
-    def init_cross_markets(self):
+    def update_pairs(self):
         """
         Stores which orderbook depths to also update when calculating spreads for a single pair
         """
