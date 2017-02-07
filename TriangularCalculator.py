@@ -137,6 +137,16 @@ class TriangularCalculator(object):
         # Margin for precision error
         V = max(min_AA, min_BA, min_CA) * 1.01
 
+        max_AA = O_AB_Sell[0].v
+        max_BB = O_BC_Sell[0].v
+        max_CC = O_CA_Sell[0].v
+        
+        max_BA = max_BB / P_AB_Sell / tx
+        max_CA = max_CC / P_BC_Sell / P_AB_Sell / tx / tx
+        
+        W = min(max_AA, max_BA, max_CA)
+        W *= 0.99
+        
         # O_XY_Sell_Clipped : Clipped Order list of X_Y to sell (bids)
         O_AB_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_AB_Sell, V)
         O_BC_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_BC_Sell,
@@ -144,6 +154,17 @@ class TriangularCalculator(object):
         O_CA_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_CA_Sell,
                                                                      utils.total_alt_volume(O_BC_Sell_Clipped) * tx)
 
+        self.log.info('============================')
+        for o in O_AB_Sell_Clipped :
+            self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+        self.log.info('============================')
+        for o in O_BC_Sell_Clipped :
+            self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+        self.log.info('============================')
+        for o in O_CA_Sell_Clipped :
+            self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+        self.log.info('============================')
+        
         if not O_AB_Sell_Clipped:
             return False
         if not O_BC_Sell_Clipped:
@@ -159,11 +180,11 @@ class TriangularCalculator(object):
         self.roundtrips[slug] = {}
         self.roundtrips[slug]['profit'] = netA
 
-        self.log.info('check_roundtrip({}, {}, {})'.format(A, B, C))
+        self.log.info('check_roundtrip({}, {}, {}) : {} BTC'.format(A, B, C, netA))
         self.log.info('    netA : {}'.format(netA))
         self.log.info('    netB : {}'.format(netB))
         self.log.info('    netC : {}'.format(netC))
-        self.log.info('    V : {}'.format(V))
+        self.log.info('    Volume : {} ~ {}'.format(V, W))
         self.log.info('    P_AB_Sell : {}'.format(P_AB_Sell))
         self.log.info('    P_BC_Sell : {}'.format(P_BC_Sell))
         self.log.info('    P_CA_Sell : {}'.format(P_CA_Sell))
