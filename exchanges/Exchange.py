@@ -101,7 +101,7 @@ class Exchange(object):
         return NotImplemented
 
     @abc.abstractmethod
-    def submit_order(self, gc, gv, rc, rv):
+    def submit_order(self, order_type, pair, price, volume):
         # TODO - fix this!
         '''
         at this point, not sure how to structure the api call to sell orders.

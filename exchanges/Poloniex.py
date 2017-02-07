@@ -78,7 +78,7 @@ class Poloniex(Exchange):
         balances = self.api.returnBalances()
         return balances
 
-    def submit_order(self, gc, gv, rc, rv):
+    def submit_order(self, order_type, pair, price, volume):
         pass
 
     def confirm_order(self, order_id):

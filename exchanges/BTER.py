@@ -76,7 +76,7 @@ class BTER(Exchange):
         funds = self.api.getFunds(self.conn, error_handler=None)
         return {k: float(v) for k, v in funds}
 
-    def submit_order(self, gc, gv, rc, rv):
+    def submit_order(self, order_type, pair, price, volume):
         return NotImplemented
 
     #         pair, swapped = self.get_validated_pair((rc, gc))
