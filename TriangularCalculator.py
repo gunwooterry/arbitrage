@@ -37,11 +37,28 @@ class TriangularCalculator(object):
 
         self.log = logging.getLogger(broker.xchg.name)
 
-    # Calculates 'spread' of a given roundtrip (A, B, C)
-    # Accumulates profits on A (commonly BTC)
-    # Spread : expected gain of A, when 1A investigated.
-    # double check_profit(str A, str B, str C)
+    def check_profits(self):
+        """
+        returns True if profitable round-trip exists between any 3 currencies.
+        checks for spread between implied_hi_bid and market lo_ask
+        """
+        is_profitable = False
+
+        for B, C in self.roundtrip_pairs:
+            if self.check_profit(self.target, B, C) > 1:
+                is_profitable = True
+            if self.check_profit(self.target, C, B) > 1:
+                is_profitable = True
+
+        return is_profitable
+
     def check_profit(self, A, B, C):
+        """
+        Calculates 'spread' of a given roundtrip (A, B, C)
+        Accumulates profits on A (commonly BTC)
+        Spread : expected gain of A, when 1A investigated.
+        double check_profit(str A, str B, str C)
+        """
         tx = 1 - self.broker.xchg.trading_fee
         # P_XY_Sell : price of 1X with respect to Y when we sell X
         P_AB_Sell = self.broker.get_highest_bid((A, B))
@@ -61,7 +78,6 @@ class TriangularCalculator(object):
 
         # Calculate spread
         spread = P_AB_Sell * P_BC_Sell * P_CA_Sell * (tx * tx * tx)
-
         slug = B + '_' + C
         self.spreads[slug] = spread
 
@@ -69,11 +85,13 @@ class TriangularCalculator(object):
 
         return spread
 
-    # Calculates minimum profit of a given roundtrip (A, B, C)
-    # Accumulates profits on A (commonly BTC)
-    # Minimum Profit : expected gain of A when minimum volume requirements for trades are 'tightly' satisfied.
-    # double check_roundtrip(str A, str B, str C)
     def check_roundtrip(self, A, B, C):
+        """
+        Calculates minimum profit of a given roundtrip (A, B, C)
+        Accumulates profits on A (commonly BTC)
+        Minimum Profit : expected gain of A when minimum volume requirements for trades are 'tightly' satisfied.
+        double check_roundtrip(str A, str B, str C)
+        """
         tx = 1 - self.broker.xchg.trading_fee
 
         # O_XY_Sell : Order list of X_Y to sell (bids)
@@ -155,26 +173,10 @@ class TriangularCalculator(object):
 
         return netA
 
-    def check_profits(self):
-        """
-        returns True if profitable round-trip exists between any 3 currencies.
-        checks for spread between implied_hi_bid and market lo_ask
-        """
-
-        hasProfitable = False
-
-        for B, C in self.roundtrip_pairs:
-            if self.check_profit(self.target, B, C) > 1:
-                hasProfitable = True
-            if self.check_profit(self.target, C, B) > 1:
-                hasProfitable = True
-
-        return hasProfitable
-
     def get_best_roundtrip(self):
         """
-        calculate the optimal roundtrip for you to execute
-        takes the form of 3 trades that are computed to fill specific quantities of orders
+        Calculate the optimal roundtrip for you to execute
+        Takes the form of 3 trades that are computed to fill specific quantities of orders
         in each of 3 different markets in a single exchange.
         """
         for slug, spread in self.spreads.items():

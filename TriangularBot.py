@@ -13,18 +13,16 @@ from TriangularCalculator import TriangularCalculator
 class TriangularBot(Bot):
     def __init__(self, config, brokers, targets):
         super(TriangularBot, self).__init__(config, brokers)
-        # this bot only trades on ONE broker!!!
-        # the reason I am doing this is to make the initial prototype system more robust to failure
-        # i.e. others keep trading even if one exchange fails.
+        # This bot only trades on ONE broker
         if len(self.brokers) > 1:
-            self.log.warning("TriangleArbitrageBot only trades on one exchange! Ignoring the others...")
+            self.log.warning("TriangularBot only trades on one exchange! Ignoring the others...")
         self.broker = self.brokers[0]
         self.log = logging.getLogger(self.broker.xchg.name)
         self.targets = targets
-        self.cross_market_pairs = {}    # c_m_p[A] is a list of all possible (B, C)
-        self.update_pairs = {}          # u_p[A] is a list of pairs to update
+        self.available_pairs = {}           # available_pairs[A] is a list of all possible (B, C)
+        self.pairs_to_update = {}           # pairs_to_update[A] is [(A, B), (B, C), (C, A), (A, B'), ...]
 
-        file_handler = logging.FileHandler('./log/%s.log' % (self.broker.xchg.name,))
+        file_handler = logging.FileHandler('./log/{}.log'.format(self.broker.xchg.name))
         stream_handler = logging.StreamHandler()
         self.log.setLevel(logging.INFO)
         self.log.addHandler(file_handler)
@@ -34,91 +32,76 @@ class TriangularBot(Bot):
     # requires HTTP Connection
     def get_roundtrip_pairs(self, target):
         """
-        given currency A, returns an array of all tradeable pairs (B, C) but not (C, B)
+        Given currency A, returns an array of all tradeable pairs (B, C) but not (C, B)
         if the exchange supports markets (A_B or B_A) and (B_C or C_B) and (C_A or A_C).
         """
         xchg = self.broker.xchg
         pairs = []
         majors = xchg.get_major_currencies()
 
-        for curr1 in majors:
-            for curr2 in majors:
-                if curr1 >= curr2:
+        for b in majors:
+            for c in majors:
+                if b >= c:
                     continue
-                if xchg.get_validated_pair((target, curr1)) is not None \
-                        and xchg.get_validated_pair((target, curr2)) is not None \
-                        and xchg.get_validated_pair((curr1, curr2)) is not None:
-                    pairs.append((curr1, curr2))
-                    self.log.info("Selected a pair: ({}, {})".format(curr1, curr2))
+                if xchg.get_validated_pair((target, b)) is not None \
+                        and xchg.get_validated_pair((target, c)) is not None \
+                        and xchg.get_validated_pair((b, c)) is not None:
+                    pairs.append((b, c))
+                    self.log.info("Selected a pair: ({}, {})".format(b, c))
         return pairs
 
     def init_cross_markets(self):
         """
-        stores which orderbook depths to also update when
-        calculating spreads for a single pair
-        cross-markets data structure:
-        {
-        'Vircurex' : {
-                'A_B' : ['C',etc.] # A_B is the pair that we wish to trade
-                'D_E' : ['F','G', etc.]
-            },
-        etc.
-        }
+        Stores which orderbook depths to also update when calculating spreads for a single pair
         """
         for target in self.targets:
-            self.cross_market_pairs[target] = self.get_roundtrip_pairs(target)
-            self.update_pairs[target] = []
-            for curr1, curr2 in self.cross_market_pairs[target]:
-                self.update_pairs[target].append((target, curr1))
-                self.update_pairs[target].append((target, curr2))
-                self.update_pairs[target].append((curr1, curr2))
-            self.log.info("Update pairs for {}: {}".format(target, self.update_pairs[target]))
+            self.available_pairs[target] = self.get_roundtrip_pairs(target)
+            self.pairs_to_update[target] = []
+            for b, c in self.available_pairs[target]:
+                self.pairs_to_update[target].append((target, b))
+                self.pairs_to_update[target].append((target, c))
+                self.pairs_to_update[target].append((b, c))
+            self.log.info("Update pairs for {}: {}".format(target, self.pairs_to_update[target]))
 
     def tick(self):
-        """
-        instead of looping over each pair, it makes more sense to trade one broker at a time
-        (otherwise if we update all the brokers first and then trade each pair, slippage time increases!)
-        """
-        self.log.info('%s tick %s' % (time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
+        # Instead of looping over each pair, it makes more sense to trade one broker at a time
+        # (Otherwise if we update all the brokers first and then trade each pair, slippage time increases!)
+        self.log.info('{} tick {}'.format(time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
         self.broker.clear()
-        # we could update the ENTIRE depth here but
-        # it turns out that some exchanges trade FAR more currencies than we want to see.
-        # better to just update on each pair we trade (after all, we affect the orderbook)
+        # We could update the ENTIRE depth here,
+        # but it turns out that some exchanges trade FAR more currencies than we want to see.
+        # Better to just update on each pair we trade (after all, we affect the orderbook)
         for target in self.targets:
-            self.broker.update_multiple_depths(self.update_pairs[target])
+            self.broker.update_multiple_depths(self.pairs_to_update[target])
+            # TODO - Do we really need this option?
             if self.trading_enabled:
-                self.trade_pair(self.broker, target)
+                self.trade_tri(self.broker, target)
 
-    def trade_pair(self, broker, target):
-        """
-        unlike the cross-exchange arbitrage bot, this one only trades
-        one exchange at a time!
-        """
-        pc = TriangularCalculator(broker, target, self.cross_market_pairs[target])
-        # type1 and type2 roundtrips are in fact completely mutually exclusive!
-        # that means that if we detect both type1 and type2 roundtrips, we can simultaneously
-        # execute both without worrying about moving the market.
+    def trade_tri(self, broker, target):
+        # This bot only trades on one exchange at a time
+        pc = TriangularCalculator(broker, target, self.available_pairs[target])
         if pc.check_profits():
             pc.get_best_roundtrip()
-            # submit each order in sequence.
 
-            # if order_triplet is not None:
-            #    print('Type%d Arbitrage Opportunity Detected!' % type)
-            # submit each order
+        # submit each order in sequence.
 
-            # triplet = pc.get_best_roundtrip()
-            # for (bidder, order) in triplet:
-            # for now, just print the order, test to see if you can execute manually.
-            # order_id, t = bidder.submit(order)
+        # if order_triplet is not None:
+        #    print('Type%d Arbitrage Opportunity Detected!' % type)
+        # submit each order
 
-            # production TODO - each broker automatically cancels orders if they don't go through.
-            # while not bidder.confirm_order(order_id):
-            #     if time.time() - t > 3:
-            #         error = bidder.order_error(order_id)
-            #     else:
-            #         print('round trip incurred an error')
+        # triplet = pc.get_best_roundtrip()
+        # for (bidder, order) in triplet:
+        # for now, just print the order, test to see if you can execute manually.
+        # order_id, t = bidder.submit(order)
 
-            # wait
-            # if time > threshold, swallow losses
-            # and cancel this one
-            # and don't submit all remaining orders
+        # production TODO - each broker automatically cancels orders if they don't go through.
+        # while not bidder.confirm_order(order_id):
+        #     if time.time() - t > 3:
+        #         error = bidder.order_error(order_id)
+        #     else:
+        #         print('round trip incurred an error')
+
+        # wait
+        # if time > threshold, swallow losses
+        # and cancel this one
+        # and don't submit all remaining orders

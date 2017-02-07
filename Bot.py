@@ -3,7 +3,7 @@
 # here is where the pair arbitrage strategy is implemented
 # along with the application loop for watching exchanges
 
-import _pickle as pickle
+import pickle
 import logging
 import logging.handlers
 import threading
@@ -110,6 +110,9 @@ class Bot(object):
             last_tick = time.time()
             pickle.dump(data, open(filepath, 'wb'))  # write to file
         self.trading_enabled = False
+
+    def trade_tri(self, broker, target):
+        pass
 
     def trade_pair(self, pair):
         pass
