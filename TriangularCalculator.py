@@ -45,19 +45,19 @@ class TriangularCalculator(object):
         is_profitable = False
 
         for B, C in self.roundtrip_pairs:
-            if self.check_profit(self.target, B, C) > 1:
+            if self.check_profit_oneway(self.target, B, C) > 1:
                 is_profitable = True
-            if self.check_profit(self.target, C, B) > 1:
+            if self.check_profit_oneway(self.target, C, B) > 1:
                 is_profitable = True
 
         return is_profitable
 
-    def check_profit(self, A, B, C):
+    def check_profit_oneway(self, A, B, C):
         """
         Calculates 'spread' of a given roundtrip (A, B, C)
         Accumulates profits on A (commonly BTC)
         Spread : expected gain of A, when 1A investigated.
-        double check_profit(str A, str B, str C)
+        double check_profit_oneway(str A, str B, str C)
         """
         tx = 1 - self.broker.xchg.trading_fee
         # P_XY_Sell : price of 1X with respect to Y when we sell X
@@ -81,7 +81,7 @@ class TriangularCalculator(object):
         slug = B + '_' + C
         self.spreads[slug] = spread
 
-        # self.log.info('check_profit({}, {}, {}) : {}'.format(A, B, C, spread))
+        # self.log.info('check_profit_oneway({}, {}, {}) : {}'.format(A, B, C, spread))
 
         return spread
 
@@ -134,9 +134,8 @@ class TriangularCalculator(object):
         min_CA = min_CC / P_BC_Sell / P_AB_Sell / tx / tx
 
         # V : Minimum volume of A which satisfies minimum volume requirements for trades
-        V = max(min_AA, min_BA, min_CA)
         # Margin for precision error
-        V *= 1.01
+        V = max(min_AA, min_BA, min_CA) * 1.01
 
         # O_XY_Sell_Clipped : Clipped Order list of X_Y to sell (bids)
         O_AB_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_AB_Sell, V)
@@ -179,12 +178,12 @@ class TriangularCalculator(object):
         Takes the form of 3 trades that are computed to fill specific quantities of orders
         in each of 3 different markets in a single exchange.
         """
-        for slug, spread in self.spreads.items():
+        for slug, spread in self.spreads:
             # Risk avoidance threshold 0.1%
             B = slug.split('_')[0]
             C = slug.split('_')[1]
             if spread > 1:
-                self.log.info('check_profit({}, {}, {}) : {}'.format(self.target, B, C, spread))
+                self.log.info('check_profit_oneway({}, {}, {}) : {}'.format(self.target, B, C, spread))
             if spread > 1.001:
                 self.log.info('check_roundtrip({}, {}, {}) : {}'.format(self.target, B, C,
                                                                         self.check_roundtrip(self.target, B, C)))

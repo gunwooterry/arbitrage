@@ -7,7 +7,7 @@ from utils_broker import create_broker
 
 def thread_bot(conf, brks, pairs):
     bot = TriangularBot(conf, [brks], pairs)
-    bot.start(5)
+    bot.start(config.TICK_PERIOD)
 
 for xchg in config.EXCHANGES:
     broker = create_broker('PAPER', xchg)
