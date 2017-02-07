@@ -1,5 +1,5 @@
 import unittest
-from bterapi.common import *
+from .common import *
 
 
 class TestCommon(unittest.TestCase):

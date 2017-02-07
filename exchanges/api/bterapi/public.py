@@ -5,40 +5,53 @@ import decimal
 
 from . import common
 
-def getMarketCap(connection=None, error_handler=None):
+
+def get_market_cap(connection=None, error_handler=None):
     if connection is None:
         connection = common.BTERConnection()
-    
-    jObj = common.validateResponse(connection.makeJSONRequest('/api/1/marketlist', method='GET'),
-                                    error_handler=error_handler)
-    
-    dict = {}
-    
-    for i in jObj['data'] :
-        if (i['curr_b'] == 'CNY') :
-            if (type(i['marketcap']) is str) :
-                dict[i['symbol']] = i['marketcap']
-    
-    return dict
-    
+    market_details = common.validateResponse(connection.makeJSONRequest('/api/1/marketlist', method='GET'),
+                                             error_handler=error_handler)['data']
+    caps = {}
+
+    for market in market_details:
+        if market['curr_b'] == 'BTC':
+            if type(market['marketcap']) is str:
+                caps[market['symbol']] = market['marketcap']
+
+    return caps
+
+
+def get_min_volumes(connection=None, error_handler=None):
+    if connection is None:
+        connection = common.BTERConnection()
+    market_info = common.validateResponse(connection.makeJSONRequest('/api/1/marketinfo', method='GET'),
+                                          error_handler=error_handler)['pairs']
+    volumes = {}
+
+    for slug, info in market_info.items():
+        volumes[slug] = info['fee']
+
+    return volumes
+
+
 def getDepth(pair, connection=None, error_handler=None):
     """
     Retrieve the depth for the given pair. Returns a tuple (asks, bids);
     each of these is a list of (price, volume) tuples.
     """
     common.validatePair(pair)
-    
+
     if connection is None:
         connection = common.BTERConnection()
-    
+
     depth = common.validateResponse(connection.makeJSONRequest('/api/1/depth/%s' % pair, method='GET'),
                                     error_handler=error_handler)
-    
+
     asks = depth.get('asks')
     if type(asks) is not list:
         raise Exception("The response does not contain an asks list.")
-        
-    bids = depth.get('bids') 
+
+    bids = depth.get('bids')
     if type(bids) is not list:
         raise Exception("The response does not contain a bids list.")
 
@@ -56,20 +69,20 @@ def getDepth(pair, connection=None, error_handler=None):
         bids = list(zip(bid_prices, bid_sizes))
     else:
         bids = []
-    
+
     return asks, bids
-    
-   
+
+
 class Trade(object):
     __slots__ = ('pair', 'type', 'price', 'tid', 'amount', 'date')
-    
+
     def __init__(self, **kwargs):
         for s in Trade.__slots__:
             setattr(self, s, kwargs.get(s))
-        
+
         if type(self.date) in (int, float, decimal.Decimal):
             self.date = datetime.datetime.fromtimestamp(self.date)
-        elif type(self.date) in (str):
+        elif type(self.date) in str:
             if "." in self.date:
                 self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d %H:%M:%S.%f")
             else:
@@ -84,7 +97,7 @@ def getTradeHistory(pair, connection=None, start_tid=None, count=None, error_han
     processed and returned.
     """
     common.validatePair(pair)
-    
+
     if connection is None:
         connection = common.BTERConnection()
 
@@ -98,12 +111,12 @@ def getTradeHistory(pair, connection=None, start_tid=None, count=None, error_han
     history = result['data']
     if type(history) is not list:
         raise Exception('The response does not contain a history list.')
-        
+
     result = []
     # Limit the number of items returned if requested.
     if count is not None:
         history = history[:count]
-        
+
     for h in history:
         h["pair"] = pair
         t = Trade(**h)

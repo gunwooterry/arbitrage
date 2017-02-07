@@ -2,7 +2,7 @@ import logging
 import os
 
 from Order import Order
-from utils import get_swapped_order
+from utils import get_swapped_order, total_base_volume
 
 from .Exchange import Exchange
 from .api import bterapi
@@ -15,13 +15,25 @@ class BTER(Exchange):
         key = self.keyhandler.getKeys()[0]
         self.conn = bterapi.BTERConnection()
         self.api = bterapi.TradeAPI(key, self.keyhandler)
+        self.min_volumes = bterapi.get_min_volumes()
         Exchange.__init__(self, 'BTER', 0.002)
-        
+
+    def get_min_vol(self, pair, depth):
+        test = self.get_validated_pair(pair)
+        if test is not None:
+            true_pair, swapped = test
+            base, alt = true_pair
+            slug = base.lower() + '_' + alt.lower()
+            alt_vol = self.min_volumes[slug]
+            if swapped:
+                return alt_vol
+            else:
+                return total_base_volume(self.get_clipped_alt_volume(depth, alt_vol))
 
     def get_major_currencies(self):
         majors = []
-        for sym, cap in bterapi.getMarketCap().items():
-            if len(cap) >= 11:
+        for sym, cap in bterapi.get_market_cap().items():
+            if len(cap) >= 5:
                 majors.append(sym)
         majors.append('CNY')  # BTER focuses on CNY.
         return majors
