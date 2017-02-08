@@ -1,5 +1,7 @@
-import config
+import logging
+
 from Order import Order
+import config
 from utils import total_base_volume
 
 
@@ -12,38 +14,44 @@ class PairwiseCalculator(object):
     change if I execute a trade)
     """
 
-    def __init__(self, brokers, pair):
+    def __init__(self, brokers, pairs_to_update, shared_pairs, logger_name):
         self.brokers = brokers
-        self.pair = pair
+        self.pairs_to_update = pairs_to_update
+        self.shared_pairs = shared_pairs
         """
-        first key = bidder exchange
-        second key = asker exchange
-        spread['CRYPTSY']['COINSE'] = -0.1 # raw profits (bid - ask)
+        first key = bidder exchange object
+        second key = asker exchange object
+        spread[x][y]['BTC_ETC'] = -0.1 # raw profits (bid - ask)
         """
         self.prices = {}  # maintains hi_bids and lo_asks for each broker
+        # prices[xchg]['BTC_CNY']['bid'] = 7000.0
         self.balances = {}  # base and alt balances for each exchange
         self.profit_spread = {}  # price spreads with transaction fees applied
         self.profits = {}  # actual ALT profits, accounting for balances and volumes
 
-        self.update_balances()
+        #self.update_balances()
         self.update_profit_spread()  # automatically perform calculations upon initialization
+        
+        self.log = logging.getLogger(logger_name)
 
     def update_profit_spread(self):
         # computes the profit spread, accounting for trading fees
-        self.profit_spread = {b.xchg.name: {a.xchg.name: 0 for a in self.brokers} for b in self.brokers}
-        self.prices = {b.xchg.name: {"bid": b.get_highest_bid(self.pair),
-                                     "ask": b.get_lowest_ask(self.pair)} for b in self.brokers}
+        self.profit_spread = {b.xchg: {a.xchg: 0 for a in self.brokers} for b in self.brokers}
+        self.prices = {b.xchg: {base+'_'+alt: {"bid": b.get_highest_bid((base,alt)),
+                                     "ask": b.get_lowest_ask((base,alt))} for base, alt in self.pairs_to_update[b.xchg]} for b in self.brokers}
         for bidder in self.brokers:  # bidder names
             for asker in self.brokers:  # asker names
-                (b, a) = (bidder.xchg.name, asker.xchg.name)
-                hi_bid = self.prices[b]['bid']
-                lo_ask = self.prices[a]['ask']
-                if hi_bid is None or lo_ask is None:
-                    self.profit_spread[b][a] = None
-                else:
-                    # ALT profit with fees applied
-                    self.profit_spread[b][a] = self.get_profit_spread(bidder.xchg.trading_fee, hi_bid,
-                                                                      asker.xchg.trading_fee, lo_ask)
+                for base, alt in self.shared_pairs[frozenset((bidder,asker))] :
+                    b, a = bidder.xchg, asker.xchg
+                    slug = base + '_' + alt
+                    hi_bid = self.prices[b][slug]['bid']
+                    lo_ask = self.prices[a][slug]['ask']
+                    if hi_bid is None or lo_ask is None:
+                        self.profit_spread[b][a][slug] = None
+                    else:
+                        # ALT profit with fees applied
+                        self.profit_spread[b][a][slug] = self.get_profit_spread(bidder.xchg.trading_fee, hi_bid,
+                                                                          asker.xchg.trading_fee, lo_ask)
 
     def update_balances(self):
         base, alt = self.pair
@@ -57,35 +65,35 @@ class PairwiseCalculator(object):
         # 1) account needs to have sufficient balance to fill the minimum order volume
         # 2) after computing the max tradeable volume (limited by my balance),
         # trade needs to profit at least 0.01 USD.
-        base, alt = self.pair
         success = False
-        self.profits = {b.xchg.name: {a.xchg.name: None for a in self.brokers} for b in self.brokers}
+        self.profits = {b.xchg: {a.xchg:{base+'_'+alt:None for base,alt in self.shared_pairs[frozenset((a.xchg, b.xchg))]} for a in self.brokers} for b in self.brokers}
         for bidder in self.brokers:  # bidder names
             for asker in self.brokers:  # asker names
-                (b, a) = (bidder.xchg.name, asker.xchg.name)
-                spread = self.profit_spread[b][a]
-                # print(spread)
-                if spread is not None and spread > config.PROFIT_THRESH[alt]:  # must profit > 0.01 USD to trade at all
-                    # Algorithm: iteratively increase the volume on the volume-limited
-                    # exchange until profits stop increasing (i.e. arb opportunity lost)
-                    # ideally we want to increase BOTH until profits no longer increase,
-                    # but that introduces an icky optimization problem
-                    # temporary solution: trade EXACTLY the min volume base order
-                    # thereby saving you the trouble of deciding which to fix, etc.
-                    # (note: we will scale appropriately to account for trading fees)
-                    slug = base + "_" + alt
-                    bids = bidder.depth[slug]['bids']
-                    asks = asker.depth[slug]['asks']
-                    profit_obj = self.calculate_order(bidder, bids, asker, asks)
-                    # after calculating the order, even though the spread is profitable, our balances make it not possible.
-                    # i.e. small magnitudes, requires too much shuffling money around to profit such a small amount.
-                    if profit_obj is not None and profit_obj["profit"] > config.PROFIT_THRESH[alt]:
-                        self.profits[b][a] = profit_obj
-                        success = True
+                for base, alt in self.shared_pairs[frozenset((bidder,asker))] :
+                    b, a = bidder.xchg, asker.xchg
+                    slug = base + '_' + alt
+                    spread = self.profit_spread[b][a][slug]
+                    # print(spread)
+                    if spread is not None and spread > 1.001:
+                        # Algorithm: iteratively increase the volume on the volume-limited
+                        # exchange until profits stop increasing (i.e. arb opportunity lost)
+                        # ideally we want to increase BOTH until profits no longer increase,
+                        # but that introduces an icky optimization problem
+                        # temporary solution: trade EXACTLY the min volume base order
+                        # thereby saving you the trouble of deciding which to fix, etc.
+                        # (note: we will scale appropriately to account for trading fees)
+                        bids = bidder.depth[slug]['bids']
+                        asks = asker.depth[slug]['asks']
+                        profit = self.calculate_order(slug, bidder, bids, asker, asks)
+                        # after calculating the order, even though the spread is profitable, our balances make it not possible.
+                        # i.e. small magnitudes, requires too much shuffling money around to profit such a small amount.
+                        if profit > 0:
+                            self.profits[b][a][slug] = profit
+                            success = True
 
         return success  # return True if there are any profits at all
 
-    def calculate_order_simple(self, bidder, bids, asker, asks):
+    def calculate_order_simple(self, slug, bidder, bids, asker, asks):
         """
         in my original algorithm design, we traverse the depth to fill the minimum
         volume desired. this is too complicated and hairy.
@@ -93,47 +101,43 @@ class PairwiseCalculator(object):
         the best price. cases where the second best is ``hidden'' under a small order
         will be ignored for now.
         """
-        base, alt = self.pair
-        slug = base + "_" + alt
         """
         first check - do the best orders have sufficient volume to satisfy xchg minimums?
         """
-        bidder_min_base_vol = bidder.xchg.get_min_vol((base, alt),
-                                                      None)  # temp hack - in pair arbitrage we assume we're always trading on valid markets
-        asker_min_base_vol = asker.xchg.get_min_vol((base, alt), None)
+        base, alt = slug.split('_')
+        bidder_min_base_vol = bidder.xchg.get_min_vol((base, alt), bids)
+        asker_min_base_vol = asker.xchg.get_min_vol((base, alt), asks)
         min_base_vol = min(bidder_min_base_vol, asker_min_base_vol)  # remember, we have to trade approx same amount
         if (bids[0].v < min_base_vol):
-            print('%s insufficient best order volume to satisfy min trade: %f / %f' % (
-            bidder.xchg.name, bids[0].v, min_base_vol))
+            self.log.info('{} insufficient best order volume to satisfy min trade: {} / {}'.format(bidder.xchg.name, bids[0].v, min_base_vol))
             return None
         if (asks[0].v < min_base_vol):
-            print('%s insufficient best order volume to satisfy min trade: %f / %f' % (
-            asker.xchg.name, asks[0].v, min_base_vol))
+            self.log.info('{} insufficient best order volume to satisfy min trade: {} / {}'.format(asker.xchg.name, asks[0].v, min_base_vol))
             return None
 
         """
         next thing to check - see if we have enough funds to make the trade
         """
-        bidder_base_balance = self.balances[bidder.xchg.name][
-            'base']  # check how much base we can afford to sell to bidder
-        asker_alt_balance = self.balances[asker.xchg.name]['alt']
-        asker_base_afford = asker_alt_balance / self.prices[asker.xchg.name][
-            'ask']  # check how much base we can afford to buy from asker
-        poor = False
-        if (bidder_base_balance < min_base_vol):
-            print(bidder.xchg.name)
-            print('Can\'t afford min vol trade - insufficient bidder balance!')
-            print('\t %s +%f %s' % (bidder.xchg.name, bidder_min_base_vol - bidder_base_balance, base))
-            poor = True
-
-        if (asker_base_afford < min_base_vol):
-            print('Can\'t afford min vol trade - insufficient asker balance!')
-            print('\t %s +%f %s' % (
-            asker.xchg.name, (asker_min_base_vol - asker_base_afford) * self.prices[asker.xchg.name]['ask'], alt))
-            poor = True
-
-        if poor:
-            return None
+#         bidder_base_balance = self.balances[bidder.xchg.name][
+#             'base']  # check how much base we can afford to sell to bidder
+#         asker_alt_balance = self.balances[asker.xchg.name]['alt']
+#         asker_base_afford = asker_alt_balance / self.prices[asker.xchg.name][
+#             'ask']  # check how much base we can afford to buy from asker
+#         poor = False
+#         if (bidder_base_balance < min_base_vol):
+#             print(bidder.xchg.name)
+#             print('Can\'t afford min vol trade - insufficient bidder balance!')
+#             print('\t %s +%f %s' % (bidder.xchg.name, bidder_min_base_vol - bidder_base_balance, base))
+#             poor = True
+# 
+#         if (asker_base_afford < min_base_vol):
+#             print('Can\'t afford min vol trade - insufficient asker balance!')
+#             print('\t %s +%f %s' % (
+#             asker.xchg.name, (asker_min_base_vol - asker_base_afford) * self.prices[asker.xchg.name]['ask'], alt))
+#             poor = True
+# 
+#         if poor:
+#             return None
 
         """
         size the volume of base traded
@@ -149,28 +153,40 @@ class PairwiseCalculator(object):
         # and we can sell a maximum of bids[0].v to the bidder
         max_base_xchg = min(bids[0].v, asks[0].v * asker_tx)
         # computes how much base we could trade if we had unlimited volume, limited balance
-        max_base_balance = min(bidder_base_balance, asker_base_afford)
+        # max_base_balance = min(bidder_base_balance, asker_base_afford)
         # how much we will end up buying and selling
-        base_vol = min(max_base_xchg, max_base_balance)
-
+        #base_vol = min(max_base_xchg, max_base_balance)
+        base_vol = max_base_xchg
+        
         bidder_order = Order(bids[0].p, base_vol)
         asker_order = Order(asks[0].p, base_vol / asker_tx)
         # profit in units alt (BTC)
         net_base = asker_order.v * asker_tx - bidder_order.v
         net_alt = bidder_order.p * bidder_order.v * bidder_tx - asker_order.p * asker_order.v
+        
+        if net_base > 0 :
+            self.log.info('calculate_order_simple({}, {}, {}) : {} BTC'.format(bidder.xchg.name, asker.xchg.name, slug, net_base))
+            self.log.info('    net_base : {}'.format(net_base))
+            self.log.info('    net_alt : {}'.format(net_alt))
+            self.log.info('    base_vol : {} ~ {}'.format(min_base_vol, base_vol))
+            self.log.info('    asker_price : {}'.format(asker_order.p))
+            self.log.info('    bidder_price : {}'.format(bidder_order.p))
+            
+        return net_base
+                
         # this is the final checkpoint - if the trade's profits are too small compared to the amount of BTC
         # we have to move, then the trade is probably too risky to make.
-        if net_alt / (asker_order.p * asker_order.v) < config.BTC_RISK:
-            print('Order volume too large to justify risk of performing the trade')
-            return None
-        else:
-            return {
-                "bidder_order": bidder_order,
-                "asker_order": asker_order,
-                "profit": net_alt
-            }
+#         if net_alt / (asker_order.p * asker_order.v) < config.BTC_RISK:
+#             print('Order volume too large to justify risk of performing the trade')
+#             return None
+#         else:
+#             return {
+#                 "bidder_order": bidder_order,
+#                 "asker_order": asker_order,
+#                 "profit": net_alt
+#             }
 
-    def calculate_order(self, bidder, bids, asker, asks):
+    def calculate_order(self, slug, bidder, bids, asker, asks):
         '''
         given a bidder and asker broker and a list of bids/asks to compute,
         - returns the order that you submit to the bidder (sell), the order that you
@@ -178,7 +194,7 @@ class PairwiseCalculator(object):
         note, profit might be negative, if the spread across the order volumes
         are not good enough
         '''
-        return self.calculate_order_simple(bidder, bids, asker, asks)
+        return self.calculate_order_simple(slug, bidder, bids, asker, asks)
 
     #         base, alt = self.pair
     #
@@ -243,21 +259,21 @@ class PairwiseCalculator(object):
         # buy order (price, volume) and ask order (price, volume)
         # TODO
         best_profit = 0.0
-        best_profit_obj = None
         hi_bidder = None
         lo_asker = None
         for bidder in self.brokers:
             for asker in self.brokers:
-                (b, a) = (bidder.xchg.name, asker.xchg.name)
-                profit_obj = self.profits[b][a]
-                if profit_obj is not None:
-                    if profit_obj["profit"] > best_profit:
-                        best_profit = profit_obj["profit"]
-                        best_profit_obj = profit_obj
-                        hi_bidder = bidder
-                        lo_asker = asker
+                for base, alt in self.shared_pairs[frozenset((bidder,asker))] :
+                    b, a = bidder.xchg, asker.xchg
+                    slug = base + '_' + alt
+                    profit = self.profits[b][a][slug]
+                    if profit is not None:
+                        if profit > best_profit:
+                            best_profit = profit
+                            hi_bidder = bidder
+                            lo_asker = asker
 
-        return (hi_bidder, lo_asker, best_profit_obj)
+        return (hi_bidder, lo_asker, profit)
 
     def get_profit_spread(self, bidder_fee, bid_price, asker_fee, ask_price):
         # simple formula
@@ -269,7 +285,7 @@ class PairwiseCalculator(object):
         # finally, the bid order itself has an exchange fee so I only see 0.998 of *that*
         # NOTE: this does not take actual order volumes into account, so this is not
         # representative of what actual profits would be
-        return bid_price * (1 - asker_fee) * (1.0 - bidder_fee) - ask_price
+        return bid_price * (1 - asker_fee) * (1.0 - bidder_fee) / ask_price
 
 # def print_matrix(self, matrix):
 #         """
