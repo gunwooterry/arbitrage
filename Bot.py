@@ -19,6 +19,9 @@ class Bot(Thread):
         self.log.setLevel(logging.INFO)
         file_handler = logging.FileHandler('./log/{}.log'.format(self.logger_name))
         stream_handler = logging.StreamHandler()
+        formatter = logging.Formatter('[%(name)s][%(asctime)s] %(message)s')
+        file_handler.setFormatter(formatter)
+        stream_handler.setFormatter(formatter)
         self.log.addHandler(file_handler)
         self.log.addHandler(stream_handler)
         self.sleep = sleep

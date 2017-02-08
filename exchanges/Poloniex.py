@@ -12,12 +12,12 @@ from .api.poloniex_api import poloniex
 
 
 class Poloniex(Exchange):
-    def __init__(self, keypath):
+    def __init__(self, keypath, logger_name):
         keyfile = open(keypath, 'r')
         api_key = keyfile.readline()
         secret = keyfile.readline()
         self.api = poloniex(api_key, secret)
-        Exchange.__init__(self, 'Poloniex', 0.0025)
+        Exchange.__init__(self, 'Poloniex', 0.0025, logger_name)
 
     # not all exchanges have the same min volumes!
     def get_min_vol(self, pair, depth):

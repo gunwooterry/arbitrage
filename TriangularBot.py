@@ -12,8 +12,8 @@ from utils_broker import create_broker
 class TriangularBot(Bot):
     def __init__(self, xchg_name, targets, sleep):
         # TriangularBot only trades on ONE broker
-        Bot.__init__(self, xchg_name, sleep)
-        self.broker = create_broker('PAPER', xchg_name)
+        Bot.__init__(self, 'TriangularBot[{}]'.format(xchg_name), sleep)
+        self.broker = create_broker('PAPER', xchg_name, self.logger_name)
         self.targets = targets
         self.available_pairs = {}           # available_pairs[A] is a list of all possible (B, C)
         self.pairs_to_update = {}           # pairs_to_update[A] is [(A, B), (B, C), (C, A), (A, B'), ...]
@@ -58,7 +58,7 @@ class TriangularBot(Bot):
     def tick(self):
         # Instead of looping over each pair, it makes more sense to trade one broker at a time
         # (Otherwise if we update all the brokers first and then trade each pair, slippage time increases!)
-        self.log.info("{} tick {}".format(time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
+        self.log.info("tick")
         self.broker.clear()
         # We could update the ENTIRE depth here,
         # but it turns out that some exchanges trade FAR more currencies than we want to see.
