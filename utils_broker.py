@@ -5,12 +5,12 @@ from exchanges.Poloniex import Poloniex
 
 
 # Broker utils
-def create_broker(mode, xchg_name):
+def create_broker(mode, xchg_name, logger_name):
     # returns an array of Broker objects
     if xchg_name == 'BTER':
-        xchg = BTER(config.BTER_KEYFILE)
+        xchg = BTER(config.BTER_KEYFILE, logger_name)
     elif xchg_name == 'POLO':
-        xchg = Poloniex(config.POLO_KEYFILE)
+        xchg = Poloniex(config.POLO_KEYFILE, logger_name)
     else:
         print('Exchange ' + xchg_name + ' not supported!')
         return None

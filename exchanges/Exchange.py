@@ -11,7 +11,7 @@ def thread_get_depth(pair, xchg, depth):
     try:
         depth[base + '_' + alt] = xchg.get_depth(base, alt)
     except:
-        print("Problem in {}".format(xchg.name))
+        xchg.log.info("Problem in {}".format(xchg.name))
         depth[base + '_' + alt] = {'bids': [], 'asks': []}
 
 
@@ -19,9 +19,10 @@ class Exchange(object):
     """docstring for Exchange"""
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, trading_fee):
+    def __init__(self, name, trading_fee, logger_name):
         super(Exchange, self).__init__()
         self.name = name
+        self.log = logging.getLogger(logger_name)
         self.trading_fee = trading_fee
         self.ok = True
         self.tradeable_pairs = self.get_tradeable_pairs()
@@ -156,7 +157,7 @@ class Exchange(object):
         ret = []
         for o in orders[:i] :
             ret.append(copy.copy(o))
-        ret[i-1].v -= base_remainder
+        ret[i - 1].v -= base_remainder
         
         return ret
 
@@ -192,7 +193,7 @@ class Exchange(object):
         ret = []
         for o in orders[:i] :
             ret.append(copy.copy(o))
-        ret[i-1].v -= alt_remainder/ret[i-1].p
+        ret[i - 1].v -= alt_remainder / ret[i - 1].p
         
         return ret
 

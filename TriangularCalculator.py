@@ -12,7 +12,7 @@ class TriangularCalculator(object):
     therefore, data structures are different from PairwiseCalculator
     """
 
-    def __init__(self, broker, target, roundtrip_pairs):
+    def __init__(self, broker, target, roundtrip_pairs, logger_name):
         self.broker = broker
         self.target = target
         self.roundtrip_pairs = roundtrip_pairs
@@ -35,7 +35,7 @@ class TriangularCalculator(object):
         """
         self.roundtrips = {}
 
-        self.log = logging.getLogger(broker.xchg.name)
+        self.log = logging.getLogger(logger_name)
 
     def check_profits(self):
         """
@@ -160,17 +160,6 @@ class TriangularCalculator(object):
                                                                      utils.total_alt_volume(O_AB_Sell_Clipped) * tx)
         O_CA_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_CA_Sell,
                                                                      utils.total_alt_volume(O_BC_Sell_Clipped) * tx)
-
-        self.log.info('============================')
-        for o in O_AB_Sell_Clipped :
-            self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
-        self.log.info('============================')
-        for o in O_BC_Sell_Clipped :
-            self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
-        self.log.info('============================')
-        for o in O_CA_Sell_Clipped :
-            self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
-        self.log.info('============================')
         
         if not O_AB_Sell_Clipped:
             return False
@@ -186,15 +175,27 @@ class TriangularCalculator(object):
         slug = B + '_' + C
         self.roundtrips[slug] = {}
         self.roundtrips[slug]['profit'] = netA
-
-        self.log.info('check_roundtrip({}, {}, {}) : {} BTC'.format(A, B, C, netA))
-        self.log.info('    netA : {}'.format(netA))
-        self.log.info('    netB : {}'.format(netB))
-        self.log.info('    netC : {}'.format(netC))
-        self.log.info('    Volume : {} ~ {}'.format(V, W))
-        self.log.info('    P_AB_Sell : {}'.format(P_AB_Sell))
-        self.log.info('    P_BC_Sell : {}'.format(P_BC_Sell))
-        self.log.info('    P_CA_Sell : {}'.format(P_CA_Sell))
+        
+        if netA > 0 :
+            self.log.info('check_roundtrip({}, {}, {}) : {} BTC'.format(A, B, C, netA))
+            self.log.info('    netA : {}'.format(netA))
+            self.log.info('    netB : {}'.format(netB))
+            self.log.info('    netC : {}'.format(netC))
+            self.log.info('    Volume : {} ~ {}'.format(V, W))
+            self.log.info('    P_AB_Sell : {}'.format(P_AB_Sell))
+            self.log.info('    P_BC_Sell : {}'.format(P_BC_Sell))
+            self.log.info('    P_CA_Sell : {}'.format(P_CA_Sell))
+            
+            self.log.info('============================')
+            for o in O_AB_Sell_Clipped :
+                self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+            self.log.info('============================')
+            for o in O_BC_Sell_Clipped :
+                self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+            self.log.info('============================')
+            for o in O_CA_Sell_Clipped :
+                self.log.info('(price:{}, volume:{})'.format(o.p, o.v))
+            self.log.info('============================')
 
         return netA
 
@@ -211,7 +212,6 @@ class TriangularCalculator(object):
             if spread > 1:
                 self.log.info('check_profit_oneway({}, {}, {}) : {}'.format(self.target, B, C, spread))
             if spread > 1.001:
-                self.log.info('check_roundtrip({}, {}, {}) : {}'.format(self.target, B, C,
-                                                                        self.check_roundtrip(self.target, B, C)))
+                self.check_roundtrip(self.target, B, C)
 
         #TODO: Return orders to place

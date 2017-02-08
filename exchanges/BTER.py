@@ -9,14 +9,14 @@ from .api import bterapi
 
 
 class BTER(Exchange):
-    def __init__(self, keyfile):
+    def __init__(self, keyfile, logger_name):
         keyfile = os.path.abspath(keyfile)
         self.keyhandler = bterapi.KeyHandler(keyfile)
         key = self.keyhandler.getKeys()[0]
         self.conn = bterapi.BTERConnection()
         self.api = bterapi.TradeAPI(key, self.keyhandler)
         self.min_volumes = bterapi.get_min_volumes()
-        Exchange.__init__(self, 'BTER', 0.002)
+        Exchange.__init__(self, 'BTER', 0.002, logger_name)
 
     def get_min_vol(self, pair, depth):
         test = self.get_validated_pair(pair)
@@ -93,7 +93,7 @@ class BTER(Exchange):
                 elif order_type == 'sell':
                     self.api.placeOrder(slug, 'buy', order.p, order.v)
         else:
-            print("Invalid order: {}, {}".format(pair[0], pair[1]))
+            self.log.info("Invalid order: {}, {}".format(pair[0], pair[1]))
 
     def confirm_order(self, order_id):
         pass

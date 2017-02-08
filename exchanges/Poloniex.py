@@ -12,12 +12,12 @@ from .api.poloniex_api import poloniex
 
 
 class Poloniex(Exchange):
-    def __init__(self, keypath):
+    def __init__(self, keypath, logger_name):
         keyfile = open(keypath, 'r')
         api_key = keyfile.readline()
         secret = keyfile.readline()
         self.api = poloniex(api_key, secret)
-        Exchange.__init__(self, 'Poloniex', 0.0025)
+        Exchange.__init__(self, 'Poloniex', 0.0025, logger_name)
 
     # not all exchanges have the same min volumes!
     def get_min_vol(self, pair, depth):
@@ -79,16 +79,20 @@ class Poloniex(Exchange):
             true_pair, swapped = self.get_validated_pair(pair)
             if true_pair is not None:
                 true_base, true_alt = true_pair
-                single_depth = all_depths[true_alt.upper() + '_' + true_base.upper()]
-                asks, bids = single_depth['asks'], single_depth['bids']
-
-                if not swapped:
-                    book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
-                    book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
-                else:
-                    book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
-                    book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
-
+                slug = true_alt.upper() + '_' + true_base.upper()
+                if slug in all_depths :
+                    single_depth = all_depths[slug]
+                    asks, bids = single_depth['asks'], single_depth['bids']
+    
+                    if not swapped:
+                        book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
+                        book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
+                    else:
+                        book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
+                        book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
+                else :
+                    self.log.info('No {} orders'.format(slug))
+                   
             base, alt = pair
             depth[base + '_' + alt] = book
 
