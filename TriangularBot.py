@@ -2,12 +2,11 @@
 # SINGLE exchange algorithm -> allows for near-instantaneous arbitrage without
 # necessitating positions in multiple currencies.
 
-import time
+from itertools import combinations
 
 from Bot import Bot
 from TriangularCalculator import TriangularCalculator
 from utils_broker import create_broker
-from itertools import combinations
 
 
 class TriangularBot(Bot):
@@ -30,7 +29,7 @@ class TriangularBot(Bot):
         # We could update the ENTIRE depth here,
         # but it turns out that some exchanges trade FAR more currencies than we want to see.
         # Better to just update on each pair we trade (after all, we affect the orderbook)
-        for target in self.targets:
+        for target in self.targets:     # This loop is actually only ONE iteration
             self.broker.update_multiple_depths(self.pairs_to_update[target])
             self.trade_tri(self.broker, target)
 
@@ -73,25 +72,3 @@ class TriangularBot(Bot):
 
         # TODO: Submit order
         # TODO: Each broker automatically cancels orders if they don't go through.
-        # submit each order in sequence.
-
-        # if order_triplet is not None:
-        #    print('Type%d Arbitrage Opportunity Detected!' % type)
-        # submit each order
-
-        # triplet = pc.get_best_roundtrip()
-        # for (bidder, order) in triplet:
-        # for now, just print the order, test to see if you can execute manually.
-        # order_id, t = bidder.submit(order)
-
-        # production
-        # while not bidder.confirm_order(order_id):
-        #     if time.time() - t > 3:
-        #         error = bidder.order_error(order_id)
-        #     else:
-        #         print('round trip incurred an error')
-
-        # wait
-        # if time > threshold, swallow losses
-        # and cancel this one
-        # and don't submit all remaining orders

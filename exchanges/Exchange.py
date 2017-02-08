@@ -6,7 +6,7 @@ import threading
 import utils
 
 
-def thread_get_depth(pair, xchg, depth):
+def update_depth(pair, xchg, depth):
     base, alt = pair
     try:
         depth[base + '_' + alt] = xchg.get_depth(base, alt)
@@ -68,16 +68,10 @@ class Exchange(object):
         Some exchanges already provide full orderbooks when fetching market data, so superclass those.
         """
         depth = {}
-        threads = []
+        threads = [threading.Thread(target=update_depth, args=(pair, self, depth)) for pair in pairs]
 
-        for (base, alt) in pairs:
-            t = threading.Thread(target=thread_get_depth, args=((base, alt), self, depth))
-            threads.append(t)
-            t.start()
-
-        for t in threads:
-            t.join()
-
+        [t.start() for t in threads]
+        [t.join() for t in threads]
         return depth
 
     @abc.abstractmethod
