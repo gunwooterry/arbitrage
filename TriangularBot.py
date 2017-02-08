@@ -17,13 +17,13 @@ class TriangularBot(Bot):
         if len(self.brokers) > 1:
             self.log.warning("TriangularBot only trades on one exchange! Ignoring the others...")
         self.broker = self.brokers[0]
-        self.log = logging.getLogger(self.broker.xchg.name)
         self.targets = targets
         self.available_pairs = {}           # available_pairs[A] is a list of all possible (B, C)
         self.pairs_to_update = {}           # pairs_to_update[A] is [(A, B), (B, C), (C, A), (A, B'), ...]
 
         file_handler = logging.FileHandler('./log/{}.log'.format(self.broker.xchg.name))
         stream_handler = logging.StreamHandler()
+        self.log = logging.getLogger(self.broker.xchg.name)
         self.log.setLevel(logging.INFO)
         self.log.addHandler(file_handler)
         self.log.addHandler(stream_handler)
@@ -66,7 +66,7 @@ class TriangularBot(Bot):
     def tick(self):
         # Instead of looping over each pair, it makes more sense to trade one broker at a time
         # (Otherwise if we update all the brokers first and then trade each pair, slippage time increases!)
-        self.log.info('{} tick {}'.format(time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
+        self.log.info("{} tick {}".format(time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
         self.broker.clear()
         # We could update the ENTIRE depth here,
         # but it turns out that some exchanges trade FAR more currencies than we want to see.

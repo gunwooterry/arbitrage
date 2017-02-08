@@ -9,7 +9,7 @@ class TriangularCalculator(object):
     minimum arbitrage volumes.
     all this data will be computed for a SINGLE exchange SINGLE pair
     (by single pair, I am referring to the start/end currencies of the arbitrage).
-    therefore, data structures are different from ProfitCalculator
+    therefore, data structures are different from PairwiseCalculator
     """
 
     def __init__(self, broker, target, roundtrip_pairs):

@@ -3,14 +3,12 @@
 # here is where the pair arbitrage strategy is implemented
 # along with the application loop for watching exchanges
 
-import pickle
+import abc
 import logging
 import logging.handlers
 import threading
 import time
 from os.path import abspath
-
-from utils_broker import get_assets
 
 
 class Bot(object):
@@ -31,7 +29,7 @@ class Bot(object):
         self.trading_enabled = True
         self.tick_i = 0
 
-    def start(self, sleep=0):  # for live/paper trading
+    def start(self, sleep=0):
         start = time.time()
         last_tick = start - sleep
         while not self.error:
@@ -42,82 +40,15 @@ class Bot(object):
             last_tick = time.time()
             self.tick()
 
-    def backtest(self, backtest_file):  # for backtesting
-        print('Initial Position:')
-        initial_position = get_assets(self.brokers)
-        print(initial_position)
-        self.backtest_data = pickle.load(open(backtest_file, "rb"))
-        self.max_ticks = len(self.backtest_data['ticks'])
-        self.tick_i = 0
-        while self.tick_i < self.max_ticks:
-            self.tick()
-            self.tick_i += 1
-        # print final assets
-        print('Final Position:')
-        final_position = get_assets(self.brokers)
-        # compute total profits
-        print('Total Profits:')
-        for k, v in final_position.items():
-            if k in initial_position:
-                print('%s : %f' % (k, v - initial_position[k]))
-            else:
-                print('%s : %f' % (k, v))
-
-    def gather_data(self, filepath=None, sleep=1, duration=60, maxdepth=6):  # for saving market data
-        '''
-        runs the bot in realtime for 60 seconds, waits 1 second between each execution, and
-        write the tick data for playback in realtime. Increase the frequency if you
-        are interested in larger-scale price movements rather than high-frequency trading.
-
-        maxdepth is number of orders saved in each market. Idea being that we are unlikely
-        to be interested in the order prices of anything beyond the 6th best
-
-        what is the best way to stucture the data?
-        ideally we would separate by market, then by bids/asks, then by each broker so it would be easy
-        to find prices.
-        but actually this would make the broker update mechanism kind of tough from the perspective of the
-        actual trading bot. So we will implement it so that the exchange update tick goes as simply as possible
-        namely we'll first separate by broker, then by market, then by bids/asks
-
-        this can be quite a lot of data!
-        '''
-        self.trading_enabled = False
-        # generate a filename if one is not provided
-        if filepath is None:
-            t = "%s__%s_%s.p" % (time.strftime('%b-%d-%Y_%H-%M-%S'), sleep, duration)
-            filepath = self.data_path + '/' + t
-
-        start = time.time()
-        data = {'start': start, 'ticks': [], 'duration': duration, 'sleep': sleep, 'maxdepth': maxdepth}
-        data['tradeable_pairs'] = {broker.xchg.name: broker.xchg.tradeable_pairs for broker in self.brokers}
-        last_tick = start - sleep
-        while time.time() - start < duration and not self.error:
-            delta = time.time() - last_tick
-            if delta < sleep:
-                # sleep for the remaining seconds
-                time.sleep(sleep - delta)
-
-            self.tick()  # calls Bot's update functions
-            marketdata = {}
-            for broker in self.brokers:
-                name = broker.xchg.name
-                brokerdata = {}
-                for market, d in broker.depth.items():
-                    brokerdata[market] = {'bids': d['bids'][:maxdepth - 1],
-                                          'asks': d['asks'][:maxdepth - 1]}
-                marketdata[name] = brokerdata
-            data['ticks'].append(marketdata)
-            last_tick = time.time()
-            pickle.dump(data, open(filepath, 'wb'))  # write to file
-        self.trading_enabled = False
-
     def trade_tri(self, broker, target):
         pass
 
     def trade_pair(self, pair):
         pass
 
+    @abc.abstractmethod
     def tick(self):
+        """
         self.log.info('%s tick' % (time.strftime('%b %d, %Y %X %Z'),))
         for broker in self.brokers:
             # clear data so that if API call fails, we don't mistakenly
@@ -158,3 +89,5 @@ class Bot(object):
             # data gathering
             if self.trading_enabled:
                 self.trade_pair(pair)
+        """
+        return NotImplemented
