@@ -36,12 +36,14 @@ class PairwiseCalculator(object):
 
     def update_profit_spread(self):
         # computes the profit spread, accounting for trading fees
-        self.profit_spread = {b.xchg: {a.xchg: 0 for a in self.brokers} for b in self.brokers}
+        self.profit_spread = {b.xchg: {a.xchg: {base+'_'+alt:0 for base,alt in self.shared_pairs[frozenset((a.xchg, b.xchg))]} for a in self.brokers if not a is b} for b in self.brokers}
         self.prices = {b.xchg: {base+'_'+alt: {"bid": b.get_highest_bid((base,alt)),
                                      "ask": b.get_lowest_ask((base,alt))} for base, alt in self.pairs_to_update[b.xchg]} for b in self.brokers}
         for bidder in self.brokers:  # bidder names
             for asker in self.brokers:  # asker names
-                for base, alt in self.shared_pairs[frozenset((bidder,asker))] :
+                if bidder is asker :
+                    continue
+                for base, alt in self.shared_pairs[frozenset([bidder.xchg, asker.xchg])] :
                     b, a = bidder.xchg, asker.xchg
                     slug = base + '_' + alt
                     hi_bid = self.prices[b][slug]['bid']
@@ -50,8 +52,7 @@ class PairwiseCalculator(object):
                         self.profit_spread[b][a][slug] = None
                     else:
                         # ALT profit with fees applied
-                        self.profit_spread[b][a][slug] = self.get_profit_spread(bidder.xchg.trading_fee, hi_bid,
-                                                                          asker.xchg.trading_fee, lo_ask)
+                        self.profit_spread[b][a][slug] = self.get_profit_spread(bidder.xchg.trading_fee, hi_bid, asker.xchg.trading_fee, lo_ask)
 
     def update_balances(self):
         base, alt = self.pair
@@ -66,10 +67,12 @@ class PairwiseCalculator(object):
         # 2) after computing the max tradeable volume (limited by my balance),
         # trade needs to profit at least 0.01 USD.
         success = False
-        self.profits = {b.xchg: {a.xchg:{base+'_'+alt:None for base,alt in self.shared_pairs[frozenset((a.xchg, b.xchg))]} for a in self.brokers} for b in self.brokers}
+        self.profits = {b.xchg: {a.xchg:{base+'_'+alt:None for base,alt in self.shared_pairs[frozenset((a.xchg, b.xchg))]} for a in self.brokers if a is not b} for b in self.brokers}
         for bidder in self.brokers:  # bidder names
             for asker in self.brokers:  # asker names
-                for base, alt in self.shared_pairs[frozenset((bidder,asker))] :
+                if bidder is asker :
+                    continue
+                for base, alt in self.shared_pairs[frozenset((bidder.xchg,asker.xchg))] :
                     b, a = bidder.xchg, asker.xchg
                     slug = base + '_' + alt
                     spread = self.profit_spread[b][a][slug]
@@ -263,6 +266,8 @@ class PairwiseCalculator(object):
         lo_asker = None
         for bidder in self.brokers:
             for asker in self.brokers:
+                if bidder is asker :
+                    continue
                 for base, alt in self.shared_pairs[frozenset((bidder,asker))] :
                     b, a = bidder.xchg, asker.xchg
                     slug = base + '_' + alt

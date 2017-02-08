@@ -120,7 +120,7 @@ class Broker(object):
 
         # assume that we have called broker.clear() before this.
         # remove all pairs that have already been updated in brokers!
-
+        
         for (A, B) in pairs:
             slug = A + '_' + B
             if slug in self.depth:

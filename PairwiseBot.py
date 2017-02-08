@@ -35,7 +35,7 @@ class PairwiseBot(Bot):
 
     def tick(self):
         self.log.info("tick")
-        threads = [broker.update_multiple_depths(self.pairs_to_update[broker.xchg]) for broker in self.brokers]
+        threads = [threading.Thread(target=broker.update_multiple_depths, args=([tuple(a) for a in self.pairs_to_update[broker.xchg]],)) for broker in self.brokers]
         [t.start() for t in threads]
         [t.join() for t in threads]
         self.trade_pair()
@@ -47,7 +47,6 @@ class PairwiseBot(Bot):
         threads = [threading.Thread(target=update_possible_pairs, args=(xchg, possible_pairs)) for xchg in exchanges]
         [t.start() for t in threads]
         [t.join() for t in threads]
-        print(possible_pairs)
 
         for xchg in exchanges:
             self.pairs_to_update[xchg] = set()
