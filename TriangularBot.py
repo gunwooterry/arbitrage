@@ -20,7 +20,19 @@ class TriangularBot(Bot):
     def init(self):
         self.update_pairs()
 
-    # requires HTTP Connection
+    def tick(self):
+        # Instead of looping over each pair, it makes more sense to trade one broker at a time
+        # (Otherwise if we update all the brokers first and then trade each pair, slippage time increases!)
+        self.get_logger().info("{} tick {}".format(time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
+        self.broker.clear()
+        # We could update the ENTIRE depth here,
+        # but it turns out that some exchanges trade FAR more currencies than we want to see.
+        # Better to just update on each pair we trade (after all, we affect the orderbook)
+        for target in self.targets:
+            self.broker.update_multiple_depths(self.pairs_to_update[target])
+            self.trade_tri(self.broker, target)
+
+    # Requires HTTP connection
     def get_roundtrip_pairs(self, target):
         """
         Given currency A, returns an array of all tradeable pairs (B, C) but not (C, B)
@@ -53,18 +65,6 @@ class TriangularBot(Bot):
                 self.pairs_to_update[target].append((target, c))
                 self.pairs_to_update[target].append((b, c))
             self.get_logger().info("Update pairs for {}: {}".format(target, self.pairs_to_update[target]))
-
-    def tick(self):
-        # Instead of looping over each pair, it makes more sense to trade one broker at a time
-        # (Otherwise if we update all the brokers first and then trade each pair, slippage time increases!)
-        self.get_logger().info("{} tick {}".format(time.strftime('%b %d, %Y %X'), self.broker.xchg.name))
-        self.broker.clear()
-        # We could update the ENTIRE depth here,
-        # but it turns out that some exchanges trade FAR more currencies than we want to see.
-        # Better to just update on each pair we trade (after all, we affect the orderbook)
-        for target in self.targets:
-            self.broker.update_multiple_depths(self.pairs_to_update[target])
-            self.trade_tri(self.broker, target)
 
     def trade_tri(self, broker, target):
         # This bot only trades on one exchange at a time

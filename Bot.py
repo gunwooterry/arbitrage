@@ -21,15 +21,22 @@ class Bot(Thread):
         self.log.addHandler(file_handler)
         self.log.addHandler(stream_handler)
         self.sleep = sleep
-    
+
+    @abc.abstractmethod
+    def init(self):
+        pass
+
+    @abc.abstractmethod
+    def tick(self):
+        return NotImplemented
+
     def get_logger(self):
         return self.log
     
     def kill(self):
         self.error = True
 
-    def init(self):
-        pass
+
 
     def run(self):
         self.init()
@@ -43,7 +50,3 @@ class Bot(Thread):
                 time.sleep(self.sleep - delta)
             last_tick = time.time()
             self.tick()
-
-    @abc.abstractmethod
-    def tick(self):
-        return NotImplemented
