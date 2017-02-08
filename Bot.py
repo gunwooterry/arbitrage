@@ -5,12 +5,9 @@
 
 import abc
 import logging
-from logging.config import thread
 import logging.handlers
-from os.path import abspath
-from threading import Thread
-import threading
 import time
+from threading import Thread
 
 
 class Bot(Thread):

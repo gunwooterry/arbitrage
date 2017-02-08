@@ -81,8 +81,8 @@ class TriangularBot(Bot):
         if pc.check_profits():
             pc.get_best_roundtrip()
 
-        #TODO: Submit order
-        #TODO: Each broker automatically cancels orders if they don't go through.
+        # TODO: Submit order
+        # TODO: Each broker automatically cancels orders if they don't go through.
         # submit each order in sequence.
 
         # if order_triplet is not None:
