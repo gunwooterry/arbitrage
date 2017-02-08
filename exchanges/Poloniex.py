@@ -42,6 +42,7 @@ class Poloniex(Exchange):
             base, alt = pair.split('_')
             if base == 'BTC' and float(rate['BTC']) > 1.0:
                 majors.append(alt)
+        majors.append('BTC')
         return majors
 
     def get_tradeable_pairs(self):
