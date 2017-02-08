@@ -1,6 +1,8 @@
 # here is where the pair arbitrage strategy is implemented
 # along with the application loop for watching exchanges
 
+from itertools import combinations
+import itertools
 import time
 
 from Bot import Bot
@@ -11,8 +13,7 @@ from utils_broker import create_broker
 class PairwiseBot(Bot):
     def __init__(self, xchg_names, sleep):
         Bot.__init__(self, "Pairwise", sleep)
-        self.brokers = [create_broker('PAPER', name) for name in xchg_names]
-        self.possible_pairs = {}
+        self.brokers = [create_broker('PAPER', name, "Pairwise") for name in xchg_names]
         self.shared_pairs = {}          # shared_pairs[(X, Y)] is a list of pairs (A, B) shared by two exchanges
         self.pairs_to_update = {}       # pairs_to_update[X] is a list of pairs to update for one exchange
 
@@ -29,30 +30,27 @@ class PairwiseBot(Bot):
         """
         majors = xchg.get_major_currencies()
         pairs = []
-        for a in majors:
-            for b in majors:
-                if xchg.get_validated_pair((a, b)) is not None:
-                    pairs.append(frozenset(a, b))
+        for a, b in combinations(majors, 2):
+            if xchg.get_validated_pair((a, b)) is not None:
+                pairs.append(frozenset((a, b)))
         return pairs
 
     def update_pairs(self):
         exchanges = [broker.xchg for broker in self.brokers]
+        # possible_pairs is only required in this initialization step
+        possible_pairs = {}
+        
         for xchg in exchanges:
             self.pairs_to_update[xchg] = set()
-            self.possible_pairs[xchg] = self.get_possible_pairs(xchg)
-        for x in exchanges:
-            for y in exchanges:
-                if x.name >= y.name:
-                    continue
-                shared = []
-                for pair in self.possible_pairs[x]:
-                    base, alt = pair
-                    # Check swapped pairs just for robustness
-                    if pair in self.possible_pairs[y] or (alt, base) in self.possible_pairs[y]:
-                        shared.append(pair)
-                        self.pairs_to_update[x].add(pair)
-                        self.pairs_to_update[y].add(pair)
-                self.shared_pairs[frozenset(x, y)] = shared
+            possible_pairs[xchg] = self.get_possible_pairs(xchg)
+            
+        for x, y in combinations(exchanges, 2):
+            self.shared_pairs[frozenset((x, y))] = list(set.intersection(set(possible_pairs[x]), set(possible_pairs[y])))
+            for p in self.shared_pairs[frozenset((x, y))] :
+                self.pairs_to_update[x].add(p)
+                self.pairs_to_update[y].add(p)
+            
+        for x in exchanges :
             self.pairs_to_update[x] = list(self.pairs_to_update[x])
 
     def trade_pair(self, pair):
