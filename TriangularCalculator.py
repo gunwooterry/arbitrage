@@ -212,7 +212,6 @@ class TriangularCalculator(object):
             if spread > 1:
                 self.log.info('check_profit_oneway({}, {}, {}) : {}'.format(self.target, B, C, spread))
             if spread > 1.001:
-                self.log.info('check_roundtrip({}, {}, {}) : {}'.format(self.target, B, C,
-                                                                        self.check_roundtrip(self.target, B, C)))
+               self.check_roundtrip(self.target, B, C)
 
         #TODO: Return orders to place

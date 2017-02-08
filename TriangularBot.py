@@ -6,13 +6,14 @@ import time
 
 from Bot import Bot
 from TriangularCalculator import TriangularCalculator
+from utils_broker import create_broker
 
 
 class TriangularBot(Bot):
-    def __init__(self, broker, targets, sleep):
+    def __init__(self, xchg_name, targets, sleep):
         # TriangularBot only trades on ONE broker
-        Bot.__init__(self, broker.xchg.name, sleep)
-        self.broker = broker
+        Bot.__init__(self, xchg_name, sleep)
+        self.broker = create_broker('PAPER', xchg_name)
         self.targets = targets
         self.available_pairs = {}           # available_pairs[A] is a list of all possible (B, C)
         self.pairs_to_update = {}           # pairs_to_update[A] is [(A, B), (B, C), (C, A), (A, B'), ...]
