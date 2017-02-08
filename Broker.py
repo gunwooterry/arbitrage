@@ -108,46 +108,38 @@ class Broker(object):
                 self.xchg.log.info('{} error: {}'.format(self.xchg.name, e))
 
     def update_multiple_depths(self, pairs, backtest_data=None, tick_i=0):
-        if backtest_data is not None:
-            # load in backtest data provided by bot
-            self.depth = backtest_data['ticks'][tick_i][self.xchg.name]
-            """
-            TODO - it is very likely that when backtesting, we will see an opportunity come up
-            multiple times on several ticks, even across large intervals like 1 minute
-            (liquidity of bitcoin is low, and I suspect not many are doing HFT arbitrage with bitcoin)
+        """
+        TODO - it is very likely that when backtesting, we will see an opportunity come up
+        multiple times on several ticks, even across large intervals like 1 minute
+        (liquidity of bitcoin is low, and I suspect not many are doing HFT arbitrage with bitcoin)
 
-            to handle this, we have to simulate partial/complete filling of orders based on orderID
-            for example, if a bid order was selling 0.4 BTC and I bought 0.2 BTC from that order,
-            the next tick will probably still display 0.4BTC being sold. I need to deduct 0.2 on the next tick
-            """
+        to handle this, we have to simulate partial/complete filling of orders based on orderID
+        for example, if a bid order was selling 0.4 BTC and I bought 0.2 BTC from that order,
+        the next tick will probably still display 0.4BTC being sold. I need to deduct 0.2 on the next tick
+        """
 
-        else:
-            # try
-            # assume that we have called broker.clear() before this.
-            # remove all pairs that have already been updated in brokers!
+        # assume that we have called broker.clear() before this.
+        # remove all pairs that have already been updated in brokers!
 
-            for (A, B) in pairs:
-                slug = A + '_' + B
-                if slug in self.depth:
-                    pairs.remove((A, B))  # already has been updated!
+        for (A, B) in pairs:
+            slug = A + '_' + B
+            if slug in self.depth:
+                pairs.remove((A, B))  # already has been updated!
 
-            #TODO: Improve readability of the codes below
-            depths = self.xchg.get_multiple_depths(pairs)
-            self.depth.update(depths)
-            for (A, B) in pairs:
-                slug = A + '_' + B
-                swapped_slug = B + '_' + A
-                self.depth[swapped_slug] = {}
-                self.depth[swapped_slug]['asks'] = [get_swapped_order(o) for o in depths[slug]['bids']]
-                self.depth[swapped_slug]['bids'] = [get_swapped_order(o) for o in depths[slug]['asks']]
-            # sort the depths by descending bid price and ascending ask price
-            # some depths have already been updated
-            for slug in self.depth:
-                self.depth[slug]['bids'].sort(key=lambda x: x.p, reverse=True)
-                self.depth[slug]['asks'].sort(key=lambda x: x.p, reverse=False)
-            #             except:
-            #                 e = sys.exc_info()[0]
-            #                 print(e)
+        #TODO: Improve readability of the codes below
+        depths = self.xchg.get_multiple_depths(pairs)
+        self.depth.update(depths)
+        for (A, B) in pairs:
+            slug = A + '_' + B
+            swapped_slug = B + '_' + A
+            self.depth[swapped_slug] = {}
+            self.depth[swapped_slug]['asks'] = [get_swapped_order(o) for o in depths[slug]['bids']]
+            self.depth[swapped_slug]['bids'] = [get_swapped_order(o) for o in depths[slug]['asks']]
+        # sort the depths by descending bid price and ascending ask price
+        # some depths have already been updated
+        for slug in self.depth:
+            self.depth[slug]['bids'].sort(key=lambda x: x.p, reverse=True)
+            self.depth[slug]['asks'].sort(key=lambda x: x.p, reverse=False)
 
     def update_all_balances(self):
         # key method!! when running in paper/live mode, fetch data from xchg
@@ -155,6 +147,7 @@ class Broker(object):
         if self.mode == 'LIVE':
             self.balances = self.xchg.get_all_balances()
         elif self.mode == 'PAPER':
+            # TODO: Implement simulated balance
             pass
 
     def clear(self):
