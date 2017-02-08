@@ -95,17 +95,5 @@ class BTER(Exchange):
         else:
             print("Invalid order: {}, {}".format(pair[0], pair[1]))
 
-    #         pair, swapped = self.get_validated_pair((rc, gc))
-    #         print swapped
-    #         if pair is None:
-    #             return
-    #         pairstr = pair[0].lower() + "_" + pair[1].lower()
-    #         if swapped:
-    #             price = rv/gv
-    #             self.api.trade(pairstr, 'sell', price, gv)
-    #         else:
-    #             price = gv/rv
-    #             self.api.trade(pairstr, 'buy', price, rv)
-
     def confirm_order(self, order_id):
         pass

@@ -131,6 +131,7 @@ class Broker(object):
                 if slug in self.depth:
                     pairs.remove((A, B))  # already has been updated!
 
+            #TODO: Improve readability of the codes below
             depths = self.xchg.get_multiple_depths(pairs)
             self.depth.update(depths)
             for (A, B) in pairs:

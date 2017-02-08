@@ -55,20 +55,44 @@ class Poloniex(Exchange):
         book = {'bids': [], 'asks': []}
         pair, swapped = self.get_validated_pair((base, alt))
 
-        if pair is None:
-            return
-        slug = pair[1].upper() + '_' + pair[0].upper()
-        depth = self.api.returnOrderBook(slug)
+        if pair is not None:
+            true_base, true_alt = pair
+            depth = self.api.returnOrderBook(true_alt.upper() + '_' + true_base.upper())
+            asks, bids = depth['asks'], depth['bids']
 
-        asks, bids = depth['asks'], depth['bids']
-        if not swapped:
-            book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
-            book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
-        else:
-            book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
-            book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
+            if not swapped:
+                book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
+                book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
+            else:
+                book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
+                book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
 
         return book
+
+    # Poloniex supports getting multiple orderbooks
+    def get_multiple_depths(self, pairs):
+        depth = {}
+        all_depths = self.api.returnOrderBook('all')
+
+        for pair in pairs:
+            book = {'bids': [], 'asks': []}
+            true_pair, swapped = self.get_validated_pair(pair)
+            if true_pair is not None:
+                true_base, true_alt = true_pair
+                single_depth = all_depths[true_base.upper() + '_' + true_alt.upper()]
+                asks, bids = single_depth['asks'], single_depth['bids']
+
+                if not swapped:
+                    book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
+                    book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
+                else:
+                    book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
+                    book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
+
+            base, alt = pair
+            depth[base + '_' + alt] = book
+
+        return depth
 
     def get_balance(self, currency):
         balances = self.get_all_balances()
@@ -96,6 +120,8 @@ class Poloniex(Exchange):
                     self.api.buy(slug, order.p, order.v)
         else:
             print("Invalid order: {}, {}".format(pair[0], pair[1]))
+
+            # TODO: Save information such as order numbers
 
     def confirm_order(self, order_id):
         pass

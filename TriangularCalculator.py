@@ -45,11 +45,9 @@ class TriangularCalculator(object):
         is_profitable = False
 
         for B, C in self.roundtrip_pairs:
-            if self.check_profit_oneway(self.target, B, C) > 1:
+            if self.check_profit_oneway(self.target, B, C) > 1 or \
+                            self.check_profit_oneway(self.target, C, B) > 1:
                 is_profitable = True
-            if self.check_profit_oneway(self.target, C, B) > 1:
-                is_profitable = True
-
         return is_profitable
 
     def check_profit_oneway(self, A, B, C):
@@ -60,6 +58,7 @@ class TriangularCalculator(object):
         double check_profit_oneway(str A, str B, str C)
         """
         tx = 1 - self.broker.xchg.trading_fee
+
         # P_XY_Sell : price of 1X with respect to Y when we sell X
         P_AB_Sell = self.broker.get_highest_bid((A, B))
         P_BC_Sell = self.broker.get_highest_bid((B, C))
@@ -80,8 +79,6 @@ class TriangularCalculator(object):
         spread = P_AB_Sell * P_BC_Sell * P_CA_Sell * (tx * tx * tx)
         slug = B + '_' + C
         self.spreads[slug] = spread
-
-        # self.log.info('check_profit_oneway({}, {}, {}) : {}'.format(A, B, C, spread))
 
         return spread
 
@@ -199,8 +196,6 @@ class TriangularCalculator(object):
         self.log.info('    P_BC_Sell : {}'.format(P_BC_Sell))
         self.log.info('    P_CA_Sell : {}'.format(P_CA_Sell))
 
-        # TODO Order Request
-
         return netA
 
     def get_best_roundtrip(self):
@@ -218,3 +213,5 @@ class TriangularCalculator(object):
             if spread > 1.001:
                 self.log.info('check_roundtrip({}, {}, {}) : {}'.format(self.target, B, C,
                                                                         self.check_roundtrip(self.target, B, C)))
+
+        #TODO: Return orders to place

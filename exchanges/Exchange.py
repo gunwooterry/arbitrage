@@ -50,24 +50,25 @@ class Exchange(object):
 
     @abc.abstractmethod
     def get_depth(self, base, alt):
-        '''
+        """
         returns all bids (someone wants to buy Base from you)
         and asks (someone offering to sell base to you).
         If exchange does not support the base_alt market but supports
         the alt_base market instead, it is up to the exchange to convert
         retrieved data to the desired format.
-        '''
+        """
         return NotImplemented
 
     def get_multiple_depths(self, pairs):
         """
-        returns entire orderbook for multiple exchanges.
+        Returns entire orderbook for multiple exchanges.
         Very useful for triangular arb, but note that not all exchanges support this.
         the default implementation is to simply fetch one pair at a time, but this is very slow.
         Some exchanges already provide full orderbooks when fetching market data, so superclass those.
         """
         depth = {}
         threads = []
+
         for (base, alt) in pairs:
             t = threading.Thread(target=thread_get_depth, args=((base, alt), self, depth))
             threads.append(t)
@@ -91,33 +92,32 @@ class Exchange(object):
 
     @abc.abstractmethod
     def get_all_balances(self):
-        '''
+        """
         returns dictionary of all balances
-        '''
+        """
         return NotImplemented
 
     @abc.abstractmethod
     def submit_order(self, order_type, pair, price, volume):
-        # TODO - fix this!
-        '''
+        """
         at this point, not sure how to structure the api call to sell orders.
         perhaps should switch to Buy/Sell style for single markets?
-        - returns some kind of standard Order data structure
-        '''
+        Returns some kind of standard Order data structure
+        """
         return NotImplemented
 
     @abc.abstractmethod
     def confirm_order(self, order_id):
-        '''
+        """
         - returns True if all submitted orders have
         - been filled. Received money need not be confirmed via blockchain
         - returns False otherwise
-        '''
+        """
         return NotImplemented
 
     # not all exchanges have the same min volumes!
     def get_min_vol(self, pair, depth):
-        '''
+        """
         retrieving the minimum order volume for a pair is easy if (base_alt) is
         already a tradeable market on the exchange. However, in many situations this is
         not the case, and it is important for Triangular Arbitrage strategies to be able
@@ -125,7 +125,7 @@ class Exchange(object):
         In the case of a flipped market, we must infer the minimum volume based on how much of
         ALT we would end up trading, so therefore we must also convert the hardcoded min volumes
         using the current going price for the order.
-        '''
+        """
         base, alt = pair
         slug = base + "_" + alt
         test = self.get_validated_pair(pair)
