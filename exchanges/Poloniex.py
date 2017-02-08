@@ -79,7 +79,7 @@ class Poloniex(Exchange):
             true_pair, swapped = self.get_validated_pair(pair)
             if true_pair is not None:
                 true_base, true_alt = true_pair
-                single_depth = all_depths[true_base.upper() + '_' + true_alt.upper()]
+                single_depth = all_depths[true_alt.upper() + '_' + true_base.upper()]
                 asks, bids = single_depth['asks'], single_depth['bids']
 
                 if not swapped:
