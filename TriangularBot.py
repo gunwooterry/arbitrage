@@ -2,8 +2,6 @@
 # SINGLE exchange algorithm -> allows for near-instantaneous arbitrage without
 # necessitating positions in multiple currencies.
 
-import logging
-import logging.handlers
 import time
 
 from Bot import Bot
