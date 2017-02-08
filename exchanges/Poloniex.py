@@ -79,16 +79,20 @@ class Poloniex(Exchange):
             true_pair, swapped = self.get_validated_pair(pair)
             if true_pair is not None:
                 true_base, true_alt = true_pair
-                single_depth = all_depths[true_alt.upper() + '_' + true_base.upper()]
-                asks, bids = single_depth['asks'], single_depth['bids']
-
-                if not swapped:
-                    book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
-                    book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
-                else:
-                    book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
-                    book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
-
+                slug = true_alt.upper() + '_' + true_base.upper()
+                if slug in all_depths :
+                    single_depth = all_depths[slug]
+                    asks, bids = single_depth['asks'], single_depth['bids']
+    
+                    if not swapped:
+                        book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
+                        book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
+                    else:
+                        book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
+                        book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
+                else :
+                    self.log.info('No {} orders'.format(slug))
+                   
             base, alt = pair
             depth[base + '_' + alt] = book
 
