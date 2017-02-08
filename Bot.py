@@ -13,17 +13,15 @@ from threading import Thread
 class Bot(Thread):
     def __init__(self, name, sleep):
         Thread.__init__(self)
+        self.logger_name = name
         self.error = False
-        self.log = logging.getLogger(name)
+        self.log = logging.getLogger(self.logger_name)
         self.log.setLevel(logging.INFO)
-        file_handler = logging.FileHandler('./log/{}.log'.format(name))
+        file_handler = logging.FileHandler('./log/{}.log'.format(self.logger_name))
         stream_handler = logging.StreamHandler()
         self.log.addHandler(file_handler)
         self.log.addHandler(stream_handler)
         self.sleep = sleep
-    
-    def get_logger(self):
-        return self.log
     
     def kill(self):
         self.error = True
