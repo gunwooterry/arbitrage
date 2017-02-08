@@ -39,7 +39,6 @@ class Bot(Thread):
 
     def run(self):
         self.init()
-        
         start = time.time()
         last_tick = start - self.sleep
         while not self.error:
