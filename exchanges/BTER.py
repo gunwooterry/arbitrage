@@ -1,21 +1,20 @@
-import logging
 import os
 
 from Order import Order
 from utils import get_swapped_order, total_base_volume
-
 from .Exchange import Exchange
-from .api import bterapi
+from .api import bter_api
 
 
 class BTER(Exchange):
     def __init__(self, keyfile, logger_name):
+        # TODO: Rename one of "keyfile"s
         keyfile = os.path.abspath(keyfile)
-        self.keyhandler = bterapi.KeyHandler(keyfile)
+        self.keyhandler = bter_api.KeyHandler(keyfile)
         key = self.keyhandler.getKeys()[0]
-        self.conn = bterapi.BTERConnection()
-        self.api = bterapi.TradeAPI(key, self.keyhandler)
-        self.min_volumes = bterapi.get_min_volumes()
+        self.conn = bter_api.BTERConnection()
+        self.api = bter_api.TradeAPI(key, self.keyhandler)
+        self.min_volumes = bter_api.get_min_volumes()
         Exchange.__init__(self, 'BTER', 0.002, logger_name)
 
     def get_min_vol(self, pair, depth):
@@ -32,7 +31,7 @@ class BTER(Exchange):
 
     def get_major_currencies(self):
         majors = []
-        for sym, cap in bterapi.get_market_cap().items():
+        for sym, cap in bter_api.get_market_cap().items():
             if len(cap) >= 5:
                 majors.append(sym)
         majors.append('CNY')  # BTER focuses on CNY.
@@ -40,7 +39,7 @@ class BTER(Exchange):
 
     def get_tradeable_pairs(self):
         tradeable_pairs = []
-        for pair in bterapi.all_pairs:
+        for pair in bter_api.all_pairs:
             a, b = pair.split("_")
             tradeable_pairs.append((a.upper(), b.upper()))
         return tradeable_pairs
@@ -52,7 +51,7 @@ class BTER(Exchange):
             return
 
         pairstr = pair[0].lower() + "_" + pair[1].lower()
-        asks, bids = bterapi.getDepth(pairstr)
+        asks, bids = bter_api.getDepth(pairstr)
 
         if not swapped:
             book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]

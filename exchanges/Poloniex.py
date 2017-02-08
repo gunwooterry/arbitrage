@@ -2,8 +2,6 @@
 ALL pairs are written in the order of (BIG coin)_(small coin)
 """
 
-import logging
-
 from Order import Order
 from utils import get_swapped_order, total_base_volume
 

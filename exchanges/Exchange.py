@@ -50,6 +50,7 @@ class Exchange(object):
     #         return NotImplemented
 
     @abc.abstractmethod
+    # TODO: Why two parameters, base and alt are given, not a pair?
     def get_depth(self, base, alt):
         """
         returns all bids (someone wants to buy Base from you)
@@ -76,13 +77,13 @@ class Exchange(object):
 
     @abc.abstractmethod
     def get_balance(self, currency):
-        '''
+        """
         return balance of particular currency
         NOTE: returns only AVAILABLE balance.
         there may be onhold or unconfirmed money that we get
         from deposits/trades but we can only use the available balance for
         trading anyway
-        '''
+        """
         return NotImplemented
 
     @abc.abstractmethod
