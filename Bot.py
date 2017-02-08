@@ -12,18 +12,28 @@ from threading import Thread
 
 class Bot(Thread):
     def __init__(self, name, sleep):
+        Thread.__init__(self)
         self.error = False
         self.log = logging.getLogger(name)
         self.log.setLevel(logging.INFO)
+        file_handler = logging.FileHandler('./log/{}.log'.format(name))
+        stream_handler = logging.StreamHandler()
+        self.log.addHandler(file_handler)
+        self.log.addHandler(stream_handler)
         self.sleep = sleep
     
-    def getLogger(self):
+    def get_logger(self):
         return self.log
     
     def kill(self):
         self.error = True
 
+    def init(self):
+        pass
+
     def run(self):
+        self.init()
+        
         start = time.time()
         last_tick = start - self.sleep
         while not self.error:
