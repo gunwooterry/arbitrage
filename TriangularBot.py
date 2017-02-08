@@ -7,6 +7,7 @@ import time
 from Bot import Bot
 from TriangularCalculator import TriangularCalculator
 from utils_broker import create_broker
+from itertools import combinations
 
 
 class TriangularBot(Bot):
@@ -43,15 +44,12 @@ class TriangularBot(Bot):
         pairs = []
         majors = xchg.get_major_currencies()
 
-        for b in majors:
-            for c in majors:
-                if b >= c:
-                    continue
-                if xchg.get_validated_pair((target, b)) is not None \
-                        and xchg.get_validated_pair((target, c)) is not None \
-                        and xchg.get_validated_pair((b, c)) is not None:
-                    pairs.append((b, c))
-                    self.log.info("Selected a pair: ({}, {})".format(b, c))
+        for b, c in combinations(majors, 2):
+            if xchg.get_validated_pair((target, b)) is not None \
+                    and xchg.get_validated_pair((target, c)) is not None \
+                    and xchg.get_validated_pair((b, c)) is not None:
+                pairs.append((b, c))
+                self.log.info("Selected a pair: ({}, {})".format(b, c))
         return pairs
 
     def update_pairs(self):

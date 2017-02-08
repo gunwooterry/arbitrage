@@ -43,7 +43,9 @@ class PairwiseBot(Bot):
         for xchg in exchanges:
             self.pairs_to_update[xchg] = set()
             possible_pairs[xchg] = self.get_possible_pairs(xchg)
-            
+        
+        print(possible_pairs)
+        
         for x, y in combinations(exchanges, 2):
             self.shared_pairs[frozenset([x, y])] = list(set.intersection(set(possible_pairs[x]), set(possible_pairs[y])))
             for p in self.shared_pairs[frozenset([x, y])] :
