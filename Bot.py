@@ -19,7 +19,7 @@ class Bot(Thread):
         self.error = False
         self.log = logging.getLogger(name)
         self.log.setLevel(logging.INFO)
-        file_handler = logging.FileHandler('./log/{}.log'.format(self.name))
+        file_handler = logging.FileHandler('./log/{}.log'.format(name))
         stream_handler = logging.StreamHandler()
         self.log.addHandler(file_handler)
         self.log.addHandler(stream_handler)
