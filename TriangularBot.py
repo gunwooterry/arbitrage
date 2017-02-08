@@ -11,12 +11,10 @@ from TriangularCalculator import TriangularCalculator
 
 
 class TriangularBot(Bot):
-    def __init__(self, config, brokers, targets):
-        super(TriangularBot, self).__init__(config, brokers)
-        # This bot only trades on ONE broker
-        if len(self.brokers) > 1:
-            self.log.warning("TriangularBot only trades on one exchange! Ignoring the others...")
-        self.broker = self.brokers[0]
+    def __init__(self, config, broker, targets):
+        # TriangularBot only trades on ONE broker
+        super(TriangularBot, self).__init__(config, [broker])
+        self.broker = broker
         self.targets = targets
         self.available_pairs = {}           # available_pairs[A] is a list of all possible (B, C)
         self.pairs_to_update = {}           # pairs_to_update[A] is [(A, B), (B, C), (C, A), (A, B'), ...]

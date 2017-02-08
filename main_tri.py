@@ -5,8 +5,8 @@ from TriangularBot import TriangularBot
 from utils_broker import create_broker
 
 
-def thread_bot(conf, brks, targets):
-    bot = TriangularBot(conf, [brks], targets)
+def thread_bot(conf, broker, targets):
+    bot = TriangularBot(conf, broker, targets)
     bot.start(config.TICK_PERIOD)
 
 for xchg in config.EXCHANGES:
