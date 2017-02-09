@@ -61,8 +61,8 @@ class PairwiseCalculator(object):
             self.prices[broker.xchg] = best_prices
 
         for bidder, asker in permutations(self.brokers, 2):
-            for base, alt in self.shared_pairs[frozenset([bidder.xchg, asker.xchg])]:
-                b, a = bidder.xchg, asker.xchg
+            b, a = bidder.xchg, asker.xchg
+            for base, alt in self.shared_pairs[frozenset([b, a])]:
                 slug = base + '_' + alt
                 hi_bid = self.prices[b][slug]['bid']
                 lo_ask = self.prices[a][slug]['ask']
