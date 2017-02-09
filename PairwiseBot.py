@@ -22,6 +22,10 @@ def update_possible_pairs(xchg, possible_pairs):
     possible_pairs[xchg] = pairs
 
 
+def tuplify(ls):
+    return [tuple(element) for element in ls]
+
+
 class PairwiseBot(Bot):
     def __init__(self, xchg_names, sleep):
         Bot.__init__(self, "Pairwise", sleep)
@@ -35,7 +39,9 @@ class PairwiseBot(Bot):
 
     def tick(self):
         self.log.info("tick")
-        threads = [threading.Thread(target=broker.update_multiple_depths, args=([tuple(a) for a in self.pairs_to_update[broker.xchg]],)) for broker in self.brokers]
+        tuples_to_update = {broker.xchg: tuplify(self.pairs_to_update[broker.xchg]) for broker in self.brokers}
+        threads = [threading.Thread(target=broker.update_multiple_depths,
+                                    args=(tuples_to_update[broker.xchg],)) for broker in self.brokers]
         [t.start() for t in threads]
         [t.join() for t in threads]
         self.trade_pair()
