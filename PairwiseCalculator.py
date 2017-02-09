@@ -113,10 +113,10 @@ class PairwiseCalculator(object):
         min_base_vol = min(bidder_min_base_vol, asker_min_base_vol)  # remember, we have to trade approx same amount
         if (bids[0].v < min_base_vol):
             self.log.info('{} insufficient best order volume to satisfy min trade: {} / {}'.format(bidder.xchg.name, bids[0].v, min_base_vol))
-            return None
+            return 0
         if (asks[0].v < min_base_vol):
             self.log.info('{} insufficient best order volume to satisfy min trade: {} / {}'.format(asker.xchg.name, asks[0].v, min_base_vol))
-            return None
+            return 0
 
         """
         next thing to check - see if we have enough funds to make the trade
