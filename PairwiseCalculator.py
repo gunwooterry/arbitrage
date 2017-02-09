@@ -48,9 +48,8 @@ class PairwiseCalculator(object):
             x, y = broker_x.xchg, broker_y.xchg
             if x not in self.profit_spread:
                 self.profit_spread[x] = {}
-            else:
-                xy_shared_pairs = self.shared_pairs[frozenset([x, y])]
-                self.profit_spread[x][y] = {(base + '_' + alt): 0 for base, alt in xy_shared_pairs}
+            xy_shared_pairs = self.shared_pairs[frozenset([x, y])]
+            self.profit_spread[x][y] = {(base + '_' + alt): 0 for base, alt in xy_shared_pairs}
 
         for broker in self.brokers:
             best_prices = {}
@@ -90,11 +89,10 @@ class PairwiseCalculator(object):
         success = False
         for broker_x, broker_y in permutations(self.brokers, 2):
             x, y = broker_x.xchg, broker_y.xchg
-            if x not in self.profit_spread:
+            if x not in self.profits:
                 self.profits[x] = {}
-            else:
-                xy_shared_pairs = self.shared_pairs[frozenset([x, y])]
-                self.profits[x][y] = {(base + '_' + alt): None for base, alt in xy_shared_pairs}
+            xy_shared_pairs = self.shared_pairs[frozenset([x, y])]
+            self.profits[x][y] = {(base + '_' + alt): None for base, alt in xy_shared_pairs}
 
         for bidder, asker in permutations(self.brokers, 2):
             for base, alt in self.shared_pairs[frozenset((bidder.xchg, asker.xchg))]:
