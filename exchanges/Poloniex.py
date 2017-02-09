@@ -10,27 +10,10 @@ from .api.poloniex_api import poloniex
 
 
 class Poloniex(Exchange):
-    def __init__(self, keypath, logger_name):
-        keyfile = open(keypath, 'r')
-        api_key = keyfile.readline()
-        secret = keyfile.readline()
-        self.api = poloniex(api_key, secret)
+    def __init__(self, keyfile, logger_name):
+        key, secret = open(keyfile, 'r').read().split()
+        self.api = poloniex(key, secret)
         Exchange.__init__(self, 'Poloniex', 0.0025, logger_name)
-
-    # not all exchanges have the same min volumes!
-    def get_min_vol(self, pair, depth):
-        # seems deprecated
-        # base, alt = pair
-        # slug = base + "_" + alt
-        test = self.get_validated_pair(pair)
-        if test is not None:
-            true_pair, swapped = test
-            if swapped:
-                return 0.0001  # 0.011 reduces likelihood we run into rounding errors. but we miss a lot of opportunity
-            else:
-                # we need to use the depth information to calculate
-                # how much alt we need to trade to fulfill min base vol
-                return total_base_volume(self.get_clipped_alt_volume(depth, 0.0001))
 
     def get_major_currencies(self):
         majors = []
@@ -46,9 +29,21 @@ class Poloniex(Exchange):
     def get_tradeable_pairs(self):
         tradeable_pairs = []
         for pair in self.api.returnTicker():
-            a, b = pair.split("_")
-            tradeable_pairs.append((b.upper(), a.upper()))
+            alt, base = pair.split('_')
+            tradeable_pairs.append((base.upper(), alt.upper()))
         return tradeable_pairs
+
+    # not all exchanges have the same min volumes!
+    def get_min_vol(self, pair, depth):
+        test = self.get_validated_pair(pair)
+        if test is not None:
+            true_pair, swapped = test
+            if swapped:
+                return 0.0001  # 0.011 reduces likelihood we run into rounding errors. but we miss a lot of opportunity
+            else:
+                # we need to use the depth information to calculate
+                # how much alt we need to trade to fulfill min base vol
+                return total_base_volume(self.get_clipped_alt_volume(depth, 0.0001))
 
     def get_depth(self, base, alt):
         book = {'bids': [], 'asks': []}
@@ -79,27 +74,31 @@ class Poloniex(Exchange):
             if true_pair is not None:
                 true_base, true_alt = true_pair
                 slug = true_alt.upper() + '_' + true_base.upper()
-                if slug in all_depths :
+                if slug in all_depths:
                     single_depth = all_depths[slug]
                     asks, bids = single_depth['asks'], single_depth['bids']
-    
+
                     if not swapped:
                         book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
                         book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
                     else:
                         book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
                         book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
-                else :
+                else:
                     self.log.info('No {} orders'.format(slug))
-                   
+
             base, alt = pair
             depth[base + '_' + alt] = book
 
         return depth
 
     def get_balance(self, currency):
+        # TODO: Does it really return "available" balances? (not trading)
         balances = self.get_all_balances()
-        return balances[currency]
+        if currency in balances:
+            return balances[currency]
+        else:
+            return 0.0
 
     def get_all_balances(self):
         balances = self.api.returnBalances()

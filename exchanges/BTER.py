@@ -40,8 +40,8 @@ class BTER(Exchange):
     def get_tradeable_pairs(self):
         tradeable_pairs = []
         for pair in bter_api.all_pairs:
-            a, b = pair.split("_")
-            tradeable_pairs.append((a.upper(), b.upper()))
+            base, alt = pair.split('_')
+            tradeable_pairs.append((base.upper(), alt.upper()))
         return tradeable_pairs
 
     def get_depth(self, base, alt):
@@ -50,7 +50,7 @@ class BTER(Exchange):
         if pair is None:
             return
 
-        pairstr = pair[0].lower() + "_" + pair[1].lower()
+        pairstr = pair[0].lower() + '_' + pair[1].lower()
         asks, bids = bter_api.getDepth(pairstr)
 
         if not swapped:

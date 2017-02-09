@@ -11,7 +11,7 @@ HOST = "api.bitfinex.com"
 VERSION = "v1"
 
 PATH_SYMBOLS = "symbols"
-PATH_TICKER = "ticker/%s"
+PATH_TICKER = "pubticker/%s"
 PATH_TODAY = "today/%s"
 PATH_STATS = "stats/%s"
 PATH_LENDBOOK = "lendbook/%s"
@@ -20,6 +20,9 @@ PATH_ORDERBOOK = "book/%s"
 # HTTP request timeout in seconds
 TIMEOUT = 5.0
 
+
+def server():
+    return "{}://{}/{}".format(PROTOCOL, HOST, VERSION)
 
 
 class TradeClient:
@@ -36,8 +39,7 @@ class TradeClient:
     @property
     def _nonce(self):
         """
-        Returns a nonce
-        Used in authentication
+        Returns a nonce used in authentication
         """
         return str(time.time() * 1000000)
 
@@ -56,13 +58,6 @@ class TradeClient:
     def place_order(self, amount, price, side, ord_type, symbol='btcusd', exchange='bitfinex'):
         """
         Submit a new order.
-        :param amount:
-        :param price:
-        :param side:
-        :param ord_type:
-        :param symbol:
-        :param exchange:
-        :return:
         """
         payload = {
 
@@ -91,8 +86,6 @@ class TradeClient:
     def delete_order(self, order_id):
         """
         Cancel an order.
-        :param order_id:
-        :return:
         """
         payload = {
             "request": "/v1/order/cancel",
@@ -114,8 +107,6 @@ class TradeClient:
     def delete_all_orders(self):
         """
         Cancel all orders.
-
-        :return:
         """
         payload = {
             "request": "/v1/order/cancel/all",
@@ -130,8 +121,6 @@ class TradeClient:
     def status_order(self, order_id):
         """
         Get the status of an order. Is it active? Was it cancelled? To what extent has it been executed? etc.
-        :param order_id:
-        :return:
         """
         payload = {
             "request": "/v1/order/status",
@@ -154,7 +143,6 @@ class TradeClient:
         """
         Fetch active orders
         """
-
         payload = {
             "request": "/v1/orders",
             "nonce": self._nonce
@@ -170,7 +158,6 @@ class TradeClient:
         """
         Fetch active Positions
         """
-
         payload = {
             "request": "/v1/positions",
             "nonce": self._nonce
@@ -184,8 +171,6 @@ class TradeClient:
     def claim_position(self, position_id):
         """
         Claim a position.
-        :param position_id:
-        :return:
         """
         payload = {
             "request": "/v1/position/claim",
@@ -202,9 +187,6 @@ class TradeClient:
     def past_trades(self, timestamp=0, symbol='btcusd'):
         """
         Fetch past trades
-        :param timestamp:
-        :param symbol:
-        :return:
         """
         payload = {
             "request": "/v1/mytrades",
@@ -220,15 +202,6 @@ class TradeClient:
         return json_resp
 
     def place_offer(self, currency, amount, rate, period, direction):
-        """
-
-        :param currency:
-        :param amount:
-        :param rate:
-        :param period:
-        :param direction:
-        :return:
-        """
         payload = {
             "request": "/v1/offer/new",
             "nonce": self._nonce,
@@ -246,11 +219,6 @@ class TradeClient:
         return json_resp
 
     def cancel_offer(self, offer_id):
-        """
-
-        :param offer_id:
-        :return:
-        """
         payload = {
             "request": "/v1/offer/cancel",
             "nonce": self._nonce,
@@ -264,11 +232,6 @@ class TradeClient:
         return json_resp
 
     def status_offer(self, offer_id):
-        """
-
-        :param offer_id:
-        :return:
-        """
         payload = {
             "request": "/v1/offer/status",
             "nonce": self._nonce,
@@ -284,7 +247,6 @@ class TradeClient:
     def active_offers(self):
         """
         Fetch active_offers
-        :return:
         """
         payload = {
             "request": "/v1/offers",
@@ -300,8 +262,6 @@ class TradeClient:
     def balances(self):
         """
         Fetch balances
-
-        :return:
         """
         payload = {
             "request": "/v1/balances",
@@ -340,51 +300,39 @@ class TradeClient:
         return json_resp
 
 
-
 class Client:
     """
     Client for the bitfinex.com API.
-
     See https://www.bitfinex.com/pages/api for API documentation.
     """
-
-    def server(self):
-        return u"{0:s}://{1:s}/{2:s}".format(PROTOCOL, HOST, VERSION)
-
-
     def url_for(self, path, path_arg=None, parameters=None):
-
         # build the basic url
-        url = "%s/%s" % (self.server(), path)
+        url = server() + '/' + path
 
-        # If there is a path_arh, interpolate it into the URL.
+        # If there is a path_arg, interpolate it into the URL.
         # In this case the path that was provided will need to have string
         # interpolation characters in it, such as PATH_TICKER
         if path_arg:
-            url = url % (path_arg)
+            url = url % path_arg
 
         # Append any parameters to the URL.
         if parameters:
-            url = "%s?%s" % (url, self._build_parameters(parameters))
+            url = url + '?' + self._build_parameters(parameters)
 
         return url
-
 
     def symbols(self):
         """
         GET /symbols
-
         curl https://api.bitfinex.com/v1/symbols
         ['btcusd','ltcusd','ltcbtc']
         """
         return self._get(self.url_for(PATH_SYMBOLS))
 
-
     def ticker(self, symbol):
         """
-        GET /ticker/:symbol
-
-        curl https://api.bitfinex.com/v1/ticker/btcusd
+        GET /pubticker/:symbol
+        curl https://api.bitfinex.com/v1/pubticker/btcusd
         {
             'ask': '562.9999',
             'timestamp': '1395552290.70933607',
@@ -392,25 +340,22 @@ class Client:
             'last_price': u'562.25',
             'mid': u'562.62495'}
         """
-        data = self._get(self.url_for(PATH_TICKER, (symbol)))
+        data = self._get(self.url_for(PATH_TICKER, symbol))
 
         # convert all values to floats
         return self._convert_to_floats(data)
-
 
     def today(self, symbol):
         """
         GET /today/:symbol
-
         curl "https://api.bitfinex.com/v1/today/btcusd"
         {"low":"550.09","high":"572.2398","volume":"7305.33119836"}
         """
 
-        data = self._get(self.url_for(PATH_TODAY, (symbol)))
+        data = self._get(self.url_for(PATH_TODAY, symbol))
 
         # convert all values to floats
         return self._convert_to_floats(data)
-
 
     def stats(self, symbol):
         """
@@ -421,10 +366,9 @@ class Client:
             {"period":30,"volume":"464505.07753251"}
         ]
         """
-        data = self._get(self.url_for(PATH_STATS, (symbol)))
+        data = self._get(self.url_for(PATH_STATS, symbol))
 
         for period in data:
-
             for key, value in period.items():
                 if key == 'period':
                     new_value = int(value)
@@ -434,7 +378,6 @@ class Client:
                 period[key] = new_value
 
         return data
-
 
     def lendbook(self, currency, parameters=None):
         """
@@ -465,7 +408,6 @@ class Client:
 
         return data
 
-
     def order_book(self, symbol, parameters=None):
         """
         curl "https://api.bitfinex.com/v1/book/btcusd"
@@ -493,7 +435,6 @@ class Client:
 
         return data
 
-
     def _convert_to_floats(self, data):
         """
         Convert all values in a dict to floats
@@ -503,14 +444,11 @@ class Client:
 
         return data
 
-
     def _get(self, url):
         return requests.get(url, timeout=TIMEOUT).json()
 
-
     def _build_parameters(self, parameters):
-        # sort the keys so we can test easily in Python 3.3 (dicts are not
-        # ordered)
+        # sort the keys so we can test easily in Python 3.3 (dicts are not ordered)
         keys = list(parameters.keys())
         keys.sort()
 

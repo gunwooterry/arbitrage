@@ -26,9 +26,6 @@ class Exchange(object):
         self.trading_fee = trading_fee
         self.ok = True
         self.tradeable_pairs = self.get_tradeable_pairs()
-        self.set_tradeable_currencies()
-        # dictionary of outstanding orders.
-        self.outstanding_orders = {}
 
     @abc.abstractmethod
     def get_major_currencies(self):
@@ -39,15 +36,18 @@ class Exchange(object):
     def get_tradeable_pairs(self):
         return NotImplemented
 
-    #     # Someone wants to buy base with alt (unit is alt)
-    #     @abc.abstractmethod
-    #     def get_highest_bid(self, base, alt):
-    #         return NotImplemented
-    #
-    #     # Someone wants to sell base for alt (unit is alt)
-    #     @abc.abstractmethod
-    #     def get_lowest_ask(self, base, alt):
-    #         return NotImplemented
+    @abc.abstractmethod
+    def get_min_vol(self, pair, depth):
+        """
+        retrieving the minimum order volume for a pair is easy if (base_alt) is
+        already a tradeable market on the exchange. However, in many situations this is
+        not the case, and it is important for Triangular Arbitrage strategies to be able
+        to handle flipped markets.
+        In the case of a flipped market, we must infer the minimum volume based on how much of
+        ALT we would end up trading, so therefore we must also convert the hardcoded min volumes
+        using the current going price for the order.
+        """
+        return NotImplemented
 
     @abc.abstractmethod
     # TODO: Why two parameters, base and alt are given, not a pair?
@@ -110,29 +110,6 @@ class Exchange(object):
         - returns False otherwise
         """
         return NotImplemented
-
-    # not all exchanges have the same min volumes!
-    def get_min_vol(self, pair, depth):
-        """
-        retrieving the minimum order volume for a pair is easy if (base_alt) is
-        already a tradeable market on the exchange. However, in many situations this is
-        not the case, and it is important for Triangular Arbitrage strategies to be able
-        to handle flipped markets.
-        In the case of a flipped market, we must infer the minimum volume based on how much of
-        ALT we would end up trading, so therefore we must also convert the hardcoded min volumes
-        using the current going price for the order.
-        """
-        base, alt = pair
-        slug = base + "_" + alt
-        test = self.get_validated_pair(pair)
-        if test is not None:
-            true_pair, swapped = test
-            if not swapped:
-                return 0.01  # 0.011 reduces likelihood we run into rounding errors. but we miss a lot of opportun
-            else:
-                # we need to use the depth information to calculate
-                # how much alt we need to trade to fulfill min base vol
-                return utils.total_base_volume(self.get_clipped_alt_volume(depth, 0.01))
 
     def get_clipped_base_volume(self, orders, desired_base_vol):
         # it is already assumed that the orders are base_alt
@@ -207,14 +184,3 @@ class Exchange(object):
         else:
             # pair is not even traded
             return None
-
-    def set_tradeable_currencies(self):
-        """
-        once tradeable pairs initialized, build list of all tradeable currencies.
-        will be needed for triangular arb strategy.
-        """
-        C = {}
-        for (base, alt) in self.tradeable_pairs:
-            C[base] = ''
-            C[alt] = ''
-        self.tradeable_currencies = C.keys()
