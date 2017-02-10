@@ -1,6 +1,5 @@
 from Order import Order
 from utils import get_swapped_order, total_base_volume
-from itertools import product
 
 from .Exchange import Exchange
 from .api import bitfinex_api
@@ -12,20 +11,31 @@ class Bitfinex(Exchange):
         self.api = bitfinex_api
         self.client = self.api.Client
         self.trader = self.api.TradeClient(key, secret)
+        self.min_volumes = \
+            {info['pair']: float(info['minimum_order_size']) for info in self.client.symbols_details()}
         Exchange.__init__(self, 'Bitfinex', 0.002, logger_name)
 
     def get_major_currencies(self):
         return ['USD', 'BTC', 'ETH', 'ETC', 'BFX', 'ZEC', 'XMR', 'RRT', 'LTC']
 
     def get_tradeable_pairs(self):
-        bases = ['ETH', 'ETC', 'BFX', 'ZEC', 'XMR', 'RRT', 'LTC']
-        alts = ['USD', 'BTC']
-        tradeable_pairs = list(product(bases, alts))
-        tradeable_pairs.append(('BTC', 'USD'))
+        tradeable_pairs = []
+        for symbol in self.client.symbols():
+            base, alt = symbol[:3].upper(), symbol[3:].upper()
+            tradeable_pairs.append((base, alt))
         return tradeable_pairs
 
     def get_min_vol(self, pair, depth):
-        pass
+        test = self.get_validated_pair(pair)
+        if test is not None:
+            true_pair, swapped = test
+            base, alt = true_pair
+            slug = base.lower() + alt.lower()
+            alt_vol = self.min_volumes[slug]
+            if swapped:
+                return alt_vol
+            else:
+                return total_base_volume(self.get_clipped_alt_volume(depth, alt_vol))
 
     def get_depth(self, base, alt):
         book = {'bids': [], 'asks': []}

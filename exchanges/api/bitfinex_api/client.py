@@ -329,6 +329,9 @@ class Client:
         """
         return self._get(self.url_for(PATH_SYMBOLS))
 
+    def symbols_details(self):
+        return self._get(self.url_for(PATH_SYMBOLS + "_details"))
+
     def ticker(self, symbol):
         """
         GET /pubticker/:symbol
