@@ -11,7 +11,7 @@ class Bitfinex(Exchange):
     def __init__(self, keyfile, logger_name):
         key, secret = open(keyfile, 'r').read().split()
         self.api = bitfinex_api
-        self.client = self.api.Client
+        self.client = self.api.Client()
         self.trader = self.api.TradeClient(key, secret)
         self.min_volumes = \
             {info['pair']: Decimal(info['minimum_order_size']) for info in self.client.symbols_details()}
