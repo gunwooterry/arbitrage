@@ -1,6 +1,7 @@
+from decimal import Decimal
+
 from Order import Order
 from utils import get_swapped_order, total_base_volume
-from decimal import Decimal
 
 from .Exchange import Exchange
 from .api import bitfinex_api

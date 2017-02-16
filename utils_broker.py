@@ -1,5 +1,6 @@
-import config
 from Broker import Broker
+import config
+from exchanges.Bitfinex import Bitfinex
 from exchanges.BTER import BTER
 from exchanges.Poloniex import Poloniex
 
@@ -11,6 +12,8 @@ def create_broker(mode, xchg_name, logger_name):
         xchg = BTER(config.BTER_KEYFILE, logger_name)
     elif xchg_name == 'POLO':
         xchg = Poloniex(config.POLO_KEYFILE, logger_name)
+    elif xchg_name == 'BITF':
+        xchg = Bitfinex(config.BITF_KEYFILE, logger_name)
     else:
         print('Exchange ' + xchg_name + ' not supported!')
         return None

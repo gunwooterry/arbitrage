@@ -1,5 +1,4 @@
 from config import *
 
-EXCHANGES = ['BTER', 'POLO']
-PAIRS = [("ETH","BTC")]
+EXCHANGES = ['BTER', 'POLO', 'BITF']
 TICK_PERIOD = 5

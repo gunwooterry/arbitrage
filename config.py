@@ -37,3 +37,5 @@ keys_dir = "exchanges/keys/"
 BTER_KEYFILE = keys_dir + "bter_key.txt"
 # POLONIEX API
 POLO_KEYFILE = keys_dir + "poloniex_key.txt"
+# BITFINEX API
+BITF_KEYFILE = keys_dir + "bitfinex_key.txt"
