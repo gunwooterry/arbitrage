@@ -18,7 +18,7 @@ def get_profit_spread(bidder_fee, bid_price, asker_fee, ask_price):
     NOTE: this does not take actual order volumes into account, so this is not
     representative of what actual profits would be
     """
-    return bid_price * (1 - asker_fee) * (1.0 - bidder_fee) / ask_price
+    return bid_price * (1 - asker_fee) * (1 - bidder_fee) / ask_price
 
 
 class PairwiseCalculator(object):
@@ -170,8 +170,8 @@ class PairwiseCalculator(object):
         """
         size the volume of base traded
         """
-        asker_tx = 1.0 - asker.xchg.trading_fee
-        bidder_tx = 1.0 - bidder.xchg.trading_fee
+        asker_tx = 1 - asker.xchg.trading_fee
+        bidder_tx = 1 - bidder.xchg.trading_fee
 
         # TODO - weird shit going on here, fix this!!
 

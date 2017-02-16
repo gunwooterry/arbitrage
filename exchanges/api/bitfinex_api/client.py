@@ -1,10 +1,13 @@
 from __future__ import absolute_import
-import requests
-import json
+
 import base64
-import hmac
 import hashlib
+import hmac
+import json
 import time
+from decimal import Decimal
+
+import requests
 
 PROTOCOL = "https"
 HOST = "api.bitfinex.com"
@@ -376,7 +379,7 @@ class Client:
                 if key == 'period':
                     new_value = int(value)
                 elif key == 'volume':
-                    new_value = float(value)
+                    new_value = Decimal(value)
 
                 period[key] = new_value
 
@@ -401,7 +404,7 @@ class Client:
 
                 for key, value in lend.items():
                     if key in ['rate', 'amount', 'timestamp']:
-                        new_value = float(value)
+                        new_value = Decimal(value)
                     elif key == 'period':
                         new_value = int(value)
                     elif key == 'frr':
@@ -434,7 +437,7 @@ class Client:
         for type_ in data.keys():
             for list_ in data[type_]:
                 for key, value in list_.items():
-                    list_[key] = float(value)
+                    list_[key] = Decimal(value)
 
         return data
 
@@ -443,7 +446,7 @@ class Client:
         Convert all values in a dict to floats
         """
         for key, value in data.items():
-            data[key] = float(value)
+            data[key] = Decimal(value)
 
         return data
 

@@ -1,4 +1,5 @@
 import copy
+from decimal import Decimal
 
 
 def get_swapped_order(order):
@@ -8,7 +9,7 @@ def get_swapped_order(order):
     alts_per_base = order.p
     vol_base = order.v
     c.v = vol_base * alts_per_base
-    c.p = 1.0 / alts_per_base
+    c.p = Decimal(1) / alts_per_base
     return c
 
 

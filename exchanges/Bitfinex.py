@@ -1,5 +1,6 @@
 from Order import Order
 from utils import get_swapped_order, total_base_volume
+from decimal import Decimal
 
 from .Exchange import Exchange
 from .api import bitfinex_api
@@ -12,8 +13,8 @@ class Bitfinex(Exchange):
         self.client = self.api.Client
         self.trader = self.api.TradeClient(key, secret)
         self.min_volumes = \
-            {info['pair']: float(info['minimum_order_size']) for info in self.client.symbols_details()}
-        Exchange.__init__(self, 'Bitfinex', 0.002, logger_name)
+            {info['pair']: Decimal(info['minimum_order_size']) for info in self.client.symbols_details()}
+        Exchange.__init__(self, 'Bitfinex', Decimal('0.002'), logger_name)
 
     def get_major_currencies(self):
         return ['USD', 'BTC', 'ETH', 'ETC', 'BFX', 'ZEC', 'XMR', 'RRT', 'LTC']

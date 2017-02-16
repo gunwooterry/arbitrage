@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from Order import Order
 from utils import get_swapped_order, total_base_volume
@@ -15,7 +16,7 @@ class BTER(Exchange):
         self.conn = bter_api.BTERConnection()
         self.api = bter_api.TradeAPI(key, self.keyhandler)
         self.min_volumes = bter_api.get_min_volumes()
-        Exchange.__init__(self, 'BTER', 0.002, logger_name)
+        Exchange.__init__(self, 'BTER', Decimal('0.002'), logger_name)
 
     def get_min_vol(self, pair, depth):
         test = self.get_validated_pair(pair)
@@ -23,7 +24,7 @@ class BTER(Exchange):
             true_pair, swapped = test
             base, alt = true_pair
             slug = base.lower() + '_' + alt.lower()
-            alt_vol = float(self.min_volumes[slug])
+            alt_vol = Decimal(self.min_volumes[slug])
             if swapped:
                 return alt_vol
             else:
@@ -54,26 +55,26 @@ class BTER(Exchange):
         asks, bids = bter_api.getDepth(pairstr)
 
         if not swapped:
-            book['bids'] = [Order(float(b[0]), float(b[1])) for b in bids]
-            book['asks'] = [Order(float(a[0]), float(a[1])) for a in asks]
+            book['bids'] = [Order(Decimal(b[0]), Decimal(b[1])) for b in bids]
+            book['asks'] = [Order(Decimal(a[0]), Decimal(a[1])) for a in asks]
         else:
-            book['asks'] = [get_swapped_order(Order(float(b[0]), float(b[1]))) for b in bids]
-            book['bids'] = [get_swapped_order(Order(float(a[0]), float(a[1]))) for a in asks]
+            book['asks'] = [get_swapped_order(Order(Decimal(b[0]), Decimal(b[1]))) for b in bids]
+            book['bids'] = [get_swapped_order(Order(Decimal(a[0]), Decimal(a[1]))) for a in asks]
 
         return book
 
     def get_balance(self, currency):
         funds = self.api.getFunds(self.conn, error_handler=None)
         if currency in funds:
-            return float(funds[currency])
+            return Decimal(funds[currency])
         else:
-            return 0.0
+            return Decimal(0)
             # data = self.api.getInfo(connection = self.conn)
             # return getattr(data, 'balance_' + currency.lower())
 
     def get_all_balances(self):
         funds = self.api.getFunds(self.conn, error_handler=None)
-        return {k: float(v) for k, v in funds}
+        return {k: Decimal(v) for k, v in funds}
 
     def submit_order(self, order_type, pair, price, volume):
         true_pair, swapped = self.get_validated_pair(pair)

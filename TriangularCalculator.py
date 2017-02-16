@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 import utils
 
@@ -143,7 +144,7 @@ class TriangularCalculator(object):
 
         # V : Minimum volume of A which satisfies minimum volume requirements for trades
         # Margin for precision error
-        V = max(min_AA, min_BA, min_CA) * 1.01
+        V = max(min_AA, min_BA, min_CA) * Decimal('1.01')
 
         max_AA = O_AB_Sell[0].v
         max_BB = O_BC_Sell[0].v
@@ -152,7 +153,7 @@ class TriangularCalculator(object):
         max_BA = max_BB / P_AB_Sell / tx
         max_CA = max_CC / P_BC_Sell / P_AB_Sell / tx / tx
         
-        W = min(max_AA, max_BA, max_CA) * 0.99
+        W = min(max_AA, max_BA, max_CA) * Decimal('0.99')
         
         # O_XY_Sell_Clipped : Clipped Order list of X_Y to sell (bids)
         O_AB_Sell_Clipped = self.broker.xchg.get_clipped_base_volume(O_AB_Sell, V)
